@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json">
+<title>marcy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #222222;
+    --text: #e0e0e0;
+    --text-dim: #666666;
+    --text-muted: #444444;
+    --accent: #ffffff;
+    --red: #ff3b30;
+    --orange: #ff9500;
+    --green: #30d158;
+    --blue: #0a84ff;
+    --yellow: #ffd60a;
+  }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Phase Banner */
+  .phase-banner {
+    padding: 16px 20px;
+    border-left: 3px solid var(--text-muted);
+    margin-bottom: 32px;
+    background: var(--surface);
+  }
+  .phase-banner.fertile {
+    border-left-color: var(--red);
+    background: #1a0a0a;
+  }
+  .phase-banner.pms {
+    border-left-color: var(--orange);
+    background: #1a1400;
+  }
+  .phase-banner.late {
+    border-left-color: var(--blue);
+    background: #0a0a1a;
+  }
+  .phase-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .phase-banner.fertile .phase-label { color: var(--red); }
+  .phase-banner.pms .phase-label { color: var(--orange); }
+  .phase-banner.late .phase-label { color: var(--blue); }
+  .phase-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Cycle Day Ring */
+  .ring-section {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 40px;
+  }
+  .ring-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+  }
+  .ring-container svg {
+    transform: rotate(-90deg);
+  }
+  .ring-bg {
+    fill: none;
+    stroke: var(--surface2);
+    stroke-width: 4;
+  }
+  .ring-progress {
+    fill: none;
+    stroke: var(--text-dim);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease;
+  }
+  .ring-progress.fertile { stroke: var(--red); }
+  .ring-progress.pms { stroke: var(--orange); }
+  .ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .ring-day {
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .ring-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .ring-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+  .ring-meta span {
+    color: var(--text);
+  }
+
+  /* Timeline */
+  .timeline {
+    margin-bottom: 40px;
+  }
+  .timeline-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .timeline-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .tl-event {
+    font-size: 13px;
+    color: var(--text);
+  }
+  .tl-date {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .tl-countdown {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: var(--surface2);
+    color: var(--text-dim);
+  }
+  .tl-countdown.soon { color: var(--orange); background: #1a1400; }
+  .tl-countdown.danger { color: var(--red); background: #1a0a0a; }
+  .tl-countdown.active { color: var(--red); background: #1a0a0a; font-weight: 700; }
+
+  /* Log Form */
+  .log-section {
+    margin-bottom: 40px;
+  }
+  .log-form {
+    display: flex;
+    gap: 8px;
+  }
+  .log-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .log-input:focus {
+    border-color: var(--text-dim);
+  }
+  .log-input::placeholder {
+    color: var(--text-muted);
+  }
+  .log-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+  .log-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .log-btn:hover { opacity: 0.85; }
+  .log-btn:active { opacity: 0.7; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* History */
+  .history-section { margin-bottom: 40px; }
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-date { color: var(--text); }
+  .history-len { color: var(--text-dim); }
+  .history-del {
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 2px;
+    transition: color 0.2s;
+  }
+  .history-del:hover { color: var(--red); }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .stat-row span { color: var(--text); }
+
+  /* Tension Alert */
+  .tension-alert {
+    padding: 16px 20px;
+    border-left: 3px solid var(--yellow);
+    background: #1a1800;
+    margin-bottom: 32px;
+  }
+  .tension-alert .phase-label { color: var(--yellow); }
+  .tension-alert .phase-sub { color: var(--text-dim); }
+
+  /* Tension heatmap */
+  .heatmap {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+    align-items: flex-end;
+    height: 40px;
+  }
+  .heat-bar {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    position: relative;
+  }
+  .heat-bar.hot { background: var(--yellow); }
+  .heat-bar.warm { background: #665200; }
+  .heat-labels {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .heat-labels span {
+    flex: 1;
+    text-align: center;
+    font-size: 8px;
+    color: var(--text-muted);
+  }
+
+  .tension-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  /* Today Card */
+  .today-btn {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    padding: 14px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 40px;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .today-btn:hover { border-color: var(--text-dim); background: var(--surface2); }
+  .today-btn .today-arrow {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .today-btn.open .today-arrow { transform: rotate(90deg); }
+  .today-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: -32px;
+    margin-bottom: 40px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .today-phase-name {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .today-section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    margin-top: 20px;
+  }
+  .today-section-label:first-of-type { margin-top: 0; }
+  .today-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+  .today-text strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 20px 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  /* Sections */
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  /* Mobile tweaks */
+  @media (max-width: 400px) {
+    .app { padding: 16px; }
+    .ring-section { gap: 20px; }
+    .ring-container { width: 100px; height: 100px; }
+    .ring-day { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>marcy</h1>
+  </div>
+
+  <div id="content">
+    <div class="empty">loading...</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ── Data Layer (localStorage) ───────────────────────────────────
+const STORAGE_KEY = 'marcy_data';
+const DEFAULT_DATA = {
+  periods: [],
+  tensions: [],
+  settings: { default_cycle_length: 28 },
+};
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return structuredClone(DEFAULT_DATA);
+    const d = JSON.parse(raw);
+    if (!d.tensions) d.tensions = [];
+    if (!d.settings) d.settings = { default_cycle_length: 28 };
+    return d;
+  } catch {
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ── Cycle Math (ported from marcy.py) ───────────────────────────
+function parseDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function isoDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function getCycleLength(data) {
+  const periods = [...data.periods].sort();
+  if (periods.length < 2) return data.settings.default_cycle_length;
+  const diffs = [];
+  for (let i = 1; i < periods.length; i++) {
+    const d = daysBetween(parseDate(periods[i - 1]), parseDate(periods[i]));
+    if (d >= 18 && d <= 45) diffs.push(d);
+  }
+  if (!diffs.length) return data.settings.default_cycle_length;
+  return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length);
+}
+
+function getPredictions(data) {
+  const periods = [...data.periods].sort();
+  if (!periods.length) return null;
+  const lastStart = parseDate(periods[periods.length - 1]);
+  const cycleLen = getCycleLength(data);
+  const nextPeriod = addDays(lastStart, cycleLen);
+  const ovulationDay = addDays(nextPeriod, -14);
+  const fertileStart = addDays(ovulationDay, -4);
+  const fertileEnd = addDays(ovulationDay, 1);
+  const pmsStart = addDays(nextPeriod, -7);
+  return {
+    lastPeriod: lastStart,
+    cycleLength: cycleLen,
+    nextPeriod, ovulationDay, fertileStart, fertileEnd, pmsStart,
+  };
+}
+
+function getTensionAnalysis(data) {
+  const tensions = [...(data.tensions || [])].sort();
+  const periods = [...data.periods].sort();
+  if (!tensions.length || !periods.length) return null;
+
+  const daysBeforePeriod = [];
+  for (const t of tensions) {
+    const tDate = parseDate(t);
+    let matched = false;
+    for (const p of periods) {
+      const pDate = parseDate(p);
+      if (pDate > tDate) {
+        const diff = daysBetween(tDate, pDate);
+        if (diff <= 14) daysBeforePeriod.push(diff);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const preds = getPredictions(data);
+      if (preds) {
+        const diff = daysBetween(tDate, preds.nextPeriod);
+        if (diff > 0 && diff <= 14) daysBeforePeriod.push(diff);
+      }
+    }
+  }
+
+  if (!daysBeforePeriod.length) return null;
+
+  const freq = {};
+  for (const d of daysBeforePeriod) freq[d] = (freq[d] || 0) + 1;
+  let hottestDay = daysBeforePeriod[0], maxCount = 0;
+  for (const [day, count] of Object.entries(freq)) {
+    if (count > maxCount) { maxCount = count; hottestDay = Number(day); }
+  }
+  const avg = Math.round(daysBeforePeriod.reduce((a, b) => a + b, 0) / daysBeforePeriod.length * 10) / 10;
+
+  return {
+    total_fights: tensions.length,
+    mapped_fights: daysBeforePeriod.length,
+    avg_days_before: avg,
+    hottest_day_before: hottestDay,
+    frequency: freq,
+  };
+}
+
+function getStatus() {
+  const data = loadData();
+  const preds = getPredictions(data);
+  if (!preds) return { empty: true };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
+
+  let phase = 'normal', phaseLabel = '';
+  if (preds.fertileStart <= today && today <= preds.fertileEnd) {
+    phase = 'fertile'; phaseLabel = 'FERTILE WINDOW';
+  } else if (today.getTime() === preds.ovulationDay.getTime()) {
+    phase = 'fertile'; phaseLabel = 'OVULATION DAY';
+  } else if (preds.pmsStart <= today && today < preds.nextPeriod) {
+    phase = 'pms'; phaseLabel = 'PMS WINDOW';
+  } else if (today >= preds.nextPeriod) {
+    const daysLate = daysBetween(preds.nextPeriod, today);
+    phase = 'late';
+    phaseLabel = daysLate === 0 ? 'PERIOD TODAY' : `PERIOD ${daysLate}D LATE`;
+  }
+
+  const daysToFertile = daysBetween(today, preds.fertileStart);
+  const daysToPms = daysBetween(today, preds.pmsStart);
+  const daysToPeriod = daysBetween(today, preds.nextPeriod);
+  const daysToOvulation = daysBetween(today, preds.ovulationDay);
+
+  const tensionData = getTensionAnalysis(data);
+  let tensionAlert = null;
+  if (tensionData) {
+    const hotDay = tensionData.hottest_day_before;
+    const hotDate = addDays(preds.nextPeriod, -hotDay);
+    tensionAlert = {
+      hottest_day_before_period: hotDay,
+      days_until_hot_day: daysBetween(today, hotDate),
+      hot_date: isoDate(hotDate),
+    };
+  }
+
+  return {
+    empty: false,
+    today: isoDate(today),
+    cycle_day: cycleDay,
+    cycle_length: preds.cycleLength,
+    cycle_type: data.periods.length < 2 ? 'default' : 'calculated',
+    last_period: isoDate(preds.lastPeriod),
+    next_period: isoDate(preds.nextPeriod),
+    fertile_start: isoDate(preds.fertileStart),
+    fertile_end: isoDate(preds.fertileEnd),
+    ovulation_day: isoDate(preds.ovulationDay),
+    pms_start: isoDate(preds.pmsStart),
+    phase, phase_label: phaseLabel,
+    days_to_fertile: daysToFertile,
+    days_to_pms: daysToPms,
+    days_to_period: daysToPeriod,
+    days_to_ovulation: daysToOvulation,
+    total_periods: data.periods.length,
+    tension_analysis: tensionData,
+    tension_alert: tensionAlert,
+  };
+}
+
+function getHistory() {
+  const data = loadData();
+  const periods = [...data.periods].sort();
+  const entries = periods.map((p, i) => {
+    const entry = { date: p };
+    if (i > 0) entry.cycle_length = daysBetween(parseDate(periods[i - 1]), parseDate(p));
+    return entry;
+  });
+  return {
+    entries,
+    average: getCycleLength(data),
+    total_cycles: Math.max(0, periods.length - 1),
+  };
+}
+
+// ── UI ──────────────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+
+function toast(msg, isError) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2400);
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+function countdown(days) {
+  if (days < 0) return { text: 'past', cls: '' };
+  if (days === 0) return { text: 'now', cls: 'active' };
+  if (days <= 3) return { text: `${days}d`, cls: 'danger' };
+  if (days <= 7) return { text: `${days}d`, cls: 'soon' };
+  return { text: `${days}d`, cls: '' };
+}
+
+// ── Today's Read ────────────────────────────────────────────────
+const todayContent = {
+  menstrual: {
+    label: 'menstrual phase',
+    insights: [
+      "Her body is shedding the uterine lining. <strong>Energy and mood are at their lowest</strong> — this is normal, not something to fix. She may feel withdrawn, tired, or more emotional than usual.",
+      "Hormone levels have dropped to their lowest point. <strong>She may feel drained, achy, or just off</strong>. Her body is doing real physical work right now, even if it doesn't look like it from the outside.",
+      "This is the reset phase. <strong>Everything slows down</strong> — energy, patience, motivation. She might want to cancel plans or just not talk much. That's her body asking for rest.",
+      "Estrogen and progesterone are bottomed out. <strong>She may be more sensitive</strong> to noise, stress, or things that normally wouldn't bother her. Think of it like running on low battery.",
+    ],
+    connect: [
+      "Comfort over problem-solving. <strong>Don't try to fix anything</strong> — just be present. Ask \"what do you need?\" and mean it. Bring her something warm, handle a chore without being asked.",
+      "<strong>Low-key quality time works best right now.</strong> Couch, blanket, her favorite show. Don't suggest anything that requires energy. If she's quiet, sit with her anyway — presence matters more than conversation.",
+      "Take things off her plate without making a big deal about it. <strong>Handle dinner, tidy up, give her space if she wants it.</strong> Small gestures land harder than grand ones this week.",
+      "<strong>Match her pace.</strong> If she wants to curl up and do nothing, that's a good plan. If she's irritable, don't take it personally — her body is literally inflamed right now. Patience is the move.",
+    ],
+  },
+  follicular: {
+    label: 'follicular phase',
+    insights: [
+      "Estrogen is rising steadily. <strong>Her mood is lifting, energy is coming back</strong>, and she's starting to feel more like herself. This is typically the easiest stretch of the cycle.",
+      "Her body is building up to ovulation. <strong>She's likely feeling optimistic, clearheaded, and social.</strong> Motivation is higher — she may want to take on new things or make plans.",
+      "Hormones are climbing in a good way. <strong>Creativity and confidence tend to peak here.</strong> She might be more talkative, adventurous, or upbeat than she was last week.",
+      "This is the \"fresh start\" part of the cycle. <strong>Energy and patience are both rebounding.</strong> She's more resilient to stress right now and generally easier to be around — not because she's trying harder, but because her chemistry is cooperating.",
+    ],
+    connect: [
+      "<strong>Good time to plan things together</strong> — dates, trips, conversations about the future. She has the bandwidth for it now and will probably enjoy it.",
+      "Match her energy. <strong>She's likely feeling upbeat and open</strong> — this is a great window for quality time, deeper conversations, or trying something new together.",
+      "<strong>Bring up the stuff you've been sitting on.</strong> Need to talk through something? Want to plan something? Her patience and receptivity are high right now — use the window.",
+      "She might be more playful and flirty. <strong>Lean into that energy.</strong> Compliment her, be spontaneous, suggest something fun. This phase rewards engagement.",
+    ],
+  },
+  ovulation: {
+    label: 'ovulation phase',
+    insights: [
+      "Estrogen has peaked and testosterone gets a brief spike. <strong>She's likely at her most confident, social, and energized.</strong> This is the biological high point of the cycle.",
+      "Her body is at peak fertility. <strong>She may feel more attractive and outgoing.</strong> Communication skills and mood are typically at their best right now.",
+      "Hormones are peaking — this is the top of the wave. <strong>She might feel magnetic, talkative, and high-energy.</strong> Libido is often highest during this window too.",
+      "This is the phase where everything is firing. <strong>Mood, confidence, social energy — all up.</strong> She may want to go out, see people, or be more spontaneous than usual.",
+    ],
+    connect: [
+      "<strong>Match her social energy.</strong> She's probably feeling good — be present, be fun, be engaged. This is a great time for a real date or something out of the ordinary.",
+      "She's feeling confident and connected. <strong>Show her you notice.</strong> Compliments feel especially good right now. Be genuinely engaged — she'll pick up on it.",
+      "<strong>Be direct and present.</strong> Her communication is sharp right now — say what you mean, listen actively. Good conversations happen easiest in this window.",
+      "If you've been meaning to do something together — <strong>now is the time.</strong> Her energy and enthusiasm are at their peak. Don't waste this window being passive.",
+    ],
+  },
+  luteal: {
+    label: 'luteal phase',
+    insights: [
+      "Progesterone is rising and estrogen is dropping. <strong>Her energy is starting to wind down</strong> and she may feel more inward-focused. Things that didn't bother her last week might start to.",
+      "The hormonal shift is real. <strong>She's moving from high-energy to conservation mode.</strong> She may feel more tired, want more alone time, or have less patience for small annoyances.",
+      "This is the transition zone. <strong>Mood can become more variable</strong> — one day she's fine, the next she's frustrated by something minor. It's not about you, it's chemistry shifting gears.",
+      "Progesterone is dominant now, which means <strong>her body is prioritizing rest and comfort over activity.</strong> She might feel bloated, sleepy, or just less interested in being \"on\" socially.",
+    ],
+    connect: [
+      "<strong>Start dialing up the patience.</strong> She may not have the same bandwidth as last week. Don't take mood shifts personally — acknowledge them without trying to logic them away.",
+      "Comfort starts to matter more. <strong>Cozy over exciting.</strong> A night in beats a night out. Check in on how she's feeling without overdoing it — one genuine ask is better than five anxious ones.",
+      "<strong>Be steady.</strong> She may be a bit more reactive or sensitive. The best thing you can do is not escalate — stay calm, don't match frustration with frustration.",
+      "This is the phase where <strong>small thoughtful things go the furthest.</strong> Her favorite snack, taking something off her plate, not making her decide what's for dinner. Low effort for you, high impact for her.",
+    ],
+  },
+  pms: {
+    label: 'pms window',
+    insights: [
+      "Both hormones are crashing toward their lowest point. <strong>This is the hardest part of the cycle.</strong> Mood, energy, and patience are all taking a hit. Physical symptoms like cramps, headaches, or bloating may have started.",
+      "Her body is gearing up for menstruation. <strong>Everything feels harder — concentrating, being social, keeping her cool.</strong> Things that seem small to you might feel overwhelming to her right now.",
+      "Serotonin drops along with the hormones. <strong>She may feel anxious, sad, or irritable</strong> in ways that seem disproportionate. She probably knows it doesn't make sense — that doesn't make it feel less real.",
+      "This is the phase where <strong>her tolerance for stress is lowest.</strong> Background annoyances she normally ignores become front and center. She's not being difficult — her chemical buffer is depleted.",
+    ],
+    connect: [
+      "<strong>Tread lightly and lead with kindness.</strong> Don't bring up stressful topics unless you have to. Handle logistics, don't ask what she wants for dinner — just make it happen.",
+      "Space if she wants it, presence if she doesn't. <strong>Ask once, respect the answer.</strong> If she's snappy, let it go. This is not the time to have a conversation about the snappiness.",
+      "<strong>Reduce friction everywhere you can.</strong> Every decision she doesn't have to make is a gift. Every mess she doesn't have to clean up matters. Think: what can I absorb right now?",
+      "Physical comfort helps more than words. <strong>Warm things, soft things, her favorite food.</strong> Don't say \"is it that time?\" — just quietly be the best version of yourself this week.",
+    ],
+  },
+};
+
+let todayCardOpen = false;
+
+function getPhaseKey(status) {
+  const day = status.cycle_day;
+  if (day <= 5) return 'menstrual';
+  if (status.phase === 'fertile') return 'ovulation';
+  if (status.phase === 'pms') return 'pms';
+  if (status.days_to_pms <= 0 && status.days_to_period > 0) return 'pms';
+  if (status.days_to_ovulation < 0 && status.days_to_pms > 0) return 'luteal';
+  return 'follicular';
+}
+
+function pickVariant(arr, cycleDay) {
+  return arr[cycleDay % arr.length];
+}
+
+function todayButton(status) {
+  const key = getPhaseKey(status);
+  const content = todayContent[key];
+  const insight = pickVariant(content.insights, status.cycle_day);
+  const connect = pickVariant(content.connect, status.cycle_day);
+
+  let html = `<button class="today-btn${todayCardOpen ? ' open' : ''}" onclick="toggleToday()">
+    <span>today's read — <span style="color:var(--text-muted)">${content.label}</span></span>
+    <span class="today-arrow">&#9654;</span>
+  </button>`;
+
+  if (todayCardOpen) {
+    html += `<div class="today-card">
+      <div class="today-section-label">where she is</div>
+      <div class="today-text">${insight}</div>
+      <div class="today-section-label">how to connect</div>
+      <div class="today-text">${connect}</div>
+    </div>`;
+  }
+  return html;
+}
+
+function toggleToday() {
+  todayCardOpen = !todayCardOpen;
+  render();
+}
+
+// ── Render ──────────────────────────────────────────────────────
+function render() {
+  const status = getStatus();
+  const history = getHistory();
+  const data = loadData();
+  const tensions = [...(data.tensions || [])].sort();
+
+  if (status.empty) {
+    $('#content').innerHTML = `
+      <div class="empty">
+        no data yet.<br>log a period to get started.
+      </div>
+      ${logForm()}
+    `;
+    bindForms();
+    return;
+  }
+
+  const pct = Math.min(status.cycle_day / status.cycle_length, 1);
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference * (1 - pct);
+
+  const ringClass = status.phase === 'fertile' ? 'fertile' : status.phase === 'pms' ? 'pms' : '';
+
+  const events = [
+    { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
+    { label: 'Ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
+    { label: 'PMS starts', date: status.pms_start, days: status.days_to_pms },
+  ];
+
+  if (status.tension_alert) {
+    events.push({
+      label: 'Peak tension',
+      date: status.tension_alert.hot_date,
+      days: status.tension_alert.days_until_hot_day,
+      isTension: true,
+    });
+  }
+
+  events.push({ label: 'Next period', date: status.next_period, days: status.days_to_period });
+  events.sort((a, b) => a.days - b.days);
+
+  let html = '';
+
+  // Phase banner
+  if (status.phase_label) {
+    const phaseMsgs = {
+      fertile: 'high conception risk — be careful',
+      pms: 'extra patience goes a long way',
+      late: 'period may be late',
+    };
+    html += `
+      <div class="phase-banner ${status.phase}">
+        <div class="phase-label">${status.phase_label}</div>
+        <div class="phase-sub">${phaseMsgs[status.phase] || ''}</div>
+      </div>
+    `;
+  }
+
+  // Tension alert
+  if (status.tension_alert && status.tension_alert.days_until_hot_day >= 0 && status.tension_alert.days_until_hot_day <= 3) {
+    const fa = status.tension_alert;
+    html += `
+      <div class="tension-alert">
+        <div class="phase-label">TENSION ALERT</div>
+        <div class="phase-sub">${fa.days_until_hot_day === 0 ? 'peak tension day — tread lightly' : `peak tension in ${fa.days_until_hot_day}d — be extra thoughtful`}</div>
+      </div>
+    `;
+  }
+
+  // Ring + meta
+  html += `
+    <div class="ring-section">
+      <div class="ring-container">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ring-progress ${ringClass}" cx="60" cy="60" r="52"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-text">
+          <div class="ring-day">${status.cycle_day}</div>
+          <div class="ring-label">of ${status.cycle_length}</div>
+        </div>
+      </div>
+      <div class="ring-meta">
+        last period<br><span>${fmtDate(status.last_period)}</span><br>
+        cycle length<br><span>${status.cycle_length}d ${status.cycle_type === 'default' ? '(est)' : ''}</span><br>
+        tracked<br><span>${status.total_periods} period${status.total_periods !== 1 ? 's' : ''}</span>
+      </div>
+    </div>
+  `;
+
+  // Today button
+  html += todayButton(status);
+
+  // Timeline
+  html += `<div class="timeline"><div class="timeline-title">upcoming</div>`;
+  for (const ev of events) {
+    const cd = countdown(ev.days);
+    const dateStr = ev.end ? `${fmtDate(ev.date)} – ${fmtDate(ev.end)}` : fmtDate(ev.date);
+    html += `
+      <div class="timeline-row">
+        <div>
+          <div class="tl-event">${ev.label}</div>
+          <div class="tl-date">${dateStr}</div>
+        </div>
+        <div class="tl-countdown ${cd.cls}">${cd.text}</div>
+      </div>
+    `;
+  }
+  html += `</div>`;
+
+  // Tension heatmap
+  if (status.tension_analysis && status.tension_analysis.mapped_fights > 0) {
+    const freq = status.tension_analysis.frequency;
+    const maxFreq = Math.max(...Object.values(freq));
+    html += `<div class="timeline" style="margin-bottom:32px"><div class="timeline-title">tension pattern</div>`;
+    html += `<div class="stat-row">logged: <span>${status.tension_analysis.total_fights} event${status.tension_analysis.total_fights !== 1 ? 's' : ''}</span></div>`;
+    html += `<div class="stat-row" style="margin-bottom:8px">avg: <span>${status.tension_analysis.avg_days_before}d before period</span></div>`;
+    html += `<div class="heatmap">`;
+    for (let d = 7; d >= 1; d--) {
+      const count = freq[d] || 0;
+      const height = count > 0 ? Math.max(20, (count / maxFreq) * 100) : 10;
+      const cls = count === maxFreq && count > 0 ? 'hot' : count > 0 ? 'warm' : '';
+      html += `<div class="heat-bar ${cls}" style="height:${height}%" title="${d}d before: ${count}"></div>`;
+    }
+    html += `</div><div class="heat-labels">`;
+    for (let d = 7; d >= 1; d--) html += `<span>-${d}d</span>`;
+    html += `</div></div>`;
+  }
+
+  // Log forms
+  html += logForm();
+  html += tensionForm();
+
+  // Tension history
+  if (tensions.length > 0) {
+    html += `<div class="history-section"><div class="section-title">tension log</div>`;
+    for (const f of [...tensions].reverse()) {
+      html += `
+        <div class="history-row">
+          <span class="history-date">${fmtDate(f)}</span>
+          <span class="history-len"></span>
+          <button class="history-del" onclick="delTension('${f}')">&times;</button>
+        </div>
+      `;
+    }
+    html += `</div>`;
+  }
+
+  // Period history
+  if (history.entries.length > 0) {
+    html += `<div class="history-section"><div class="section-title">period history</div>`;
+    html += `<div class="stat-row">cycles: <span>${history.total_cycles}</span></div>`;
+    html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
+    for (const e of [...history.entries].reverse()) {
+      const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
+      html += `
+        <div class="history-row">
+          <span class="history-date">${fmtDate(e.date)}</span>
+          <span class="history-len">${lenStr}</span>
+          <button class="history-del" onclick="del('${e.date}')">&times;</button>
+        </div>
+      `;
+    }
+    html += `</div>`;
+  }
+
+  html += `<div class="footer">marcy &middot; local &middot; private</div>`;
+
+  $('#content').innerHTML = html;
+  bindForms();
+}
+
+function logForm() {
+  return `
+    <div class="log-section">
+      <div class="section-title">log period</div>
+      <div class="log-form">
+        <input type="date" class="log-input" id="log-date">
+        <button class="log-btn" id="log-btn">log</button>
+      </div>
+    </div>
+  `;
+}
+
+function tensionForm() {
+  return `
+    <div class="log-section">
+      <div class="section-title">log tension</div>
+      <div class="log-form">
+        <input type="date" class="log-input" id="tension-date">
+        <button class="log-btn" id="tension-btn" style="background:var(--yellow);color:var(--bg)">log</button>
+      </div>
+    </div>
+  `;
+}
+
+function bindForms() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const logInput = $('#log-date');
+  const logBtn = $('#log-btn');
+  if (logInput && logBtn) {
+    logInput.value = today;
+    logBtn.addEventListener('click', () => {
+      const val = logInput.value;
+      if (!val) return;
+      const data = loadData();
+      if (data.periods.includes(val)) { toast(`${val} already logged`, true); return; }
+      data.periods.push(val);
+      data.periods.sort();
+      saveData(data);
+      toast(`logged ${fmtDate(val)}`);
+      render();
+    });
+  }
+
+  const tensionInput = $('#tension-date');
+  const tensionBtn = $('#tension-btn');
+  if (tensionInput && tensionBtn) {
+    tensionInput.value = today;
+    tensionBtn.addEventListener('click', () => {
+      const val = tensionInput.value;
+      if (!val) return;
+      const data = loadData();
+      if (data.tensions.includes(val)) { toast(`${val} already logged`, true); return; }
+      data.tensions.push(val);
+      data.tensions.sort();
+      saveData(data);
+      toast(`logged tension ${fmtDate(val)}`);
+      render();
+    });
+  }
+}
+
+function del(dateStr) {
+  const data = loadData();
+  data.periods = data.periods.filter(p => p !== dateStr);
+  saveData(data);
+  toast(`removed ${fmtDate(dateStr)}`);
+  render();
+}
+
+function delTension(dateStr) {
+  const data = loadData();
+  data.tensions = data.tensions.filter(t => t !== dateStr);
+  saveData(data);
+  toast(`removed tension ${fmtDate(dateStr)}`);
+  render();
+}
+
+// PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+render();
+</script>
+</body>
+</html>
