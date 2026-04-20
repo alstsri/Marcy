@@ -120,6 +120,7 @@
   }
   .ring-progress.fertile { stroke: var(--red); }
   .ring-progress.pms { stroke: var(--orange); }
+  .ring-progress.late { stroke: var(--blue); }
   .ring-text {
     position: absolute;
     top: 50%;
@@ -403,6 +404,258 @@
     font-weight: 500;
   }
 
+  /* Onboarding */
+  .onboard {
+    padding: 40px 0;
+  }
+  .onboard-title {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--accent);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .onboard-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-bottom: 32px;
+  }
+  .onboard-field {
+    margin-bottom: 20px;
+  }
+  .onboard-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .onboard-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .onboard-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .onboard-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 14px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 8px;
+  }
+  .onboard-btn:hover { opacity: 0.85; }
+  .onboard-btn:active { opacity: 0.7; }
+  .onboard-skip {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 12px;
+    margin-top: 4px;
+  }
+  .onboard-skip:hover { color: var(--text-dim); }
+
+  /* Confirm Dialog */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.15s ease;
+  }
+  .confirm-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    max-width: 300px;
+    width: 90%;
+    text-align: center;
+  }
+  .confirm-msg {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .confirm-actions button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+  }
+  .confirm-cancel {
+    background: var(--surface2);
+    color: var(--text-dim);
+  }
+  .confirm-delete {
+    background: var(--red);
+    color: var(--bg);
+  }
+
+  /* Late period prompt */
+  .late-prompt {
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .late-prompt-text {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .late-prompt-btn {
+    background: var(--blue);
+    color: var(--bg);
+    border: none;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .late-prompt-btn:hover { opacity: 0.85; }
+
+  /* Settings section */
+  .settings-section {
+    margin-bottom: 40px;
+  }
+  .settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { color: var(--text-dim); }
+  .settings-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .settings-input {
+    width: 60px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-align: center;
+    outline: none;
+  }
+  .settings-input:focus { border-color: var(--text-dim); }
+  .settings-save {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .settings-save:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* Backup buttons */
+  .backup-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .backup-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .backup-btn:hover { color: var(--text); border-color: var(--text-dim); }
+  .backup-file {
+    display: none;
+  }
+
+  /* Terms */
+  .terms {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .terms-toggle {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: color 0.2s;
+  }
+  .terms-toggle:hover { color: var(--text-dim); }
+
   /* Footer */
   .footer {
     text-align: center;
@@ -451,6 +704,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div id="confirm-root"></div>
 </div>
 
 <script>
@@ -459,7 +713,8 @@ const STORAGE_KEY = 'marcy_data';
 const DEFAULT_DATA = {
   periods: [],
   tensions: [],
-  settings: { default_cycle_length: 28 },
+  settings: { default_cycle_length: 28, manual_cycle_length: null },
+  onboarded: false,
 };
 
 function loadData() {
@@ -468,7 +723,9 @@ function loadData() {
     if (!raw) return structuredClone(DEFAULT_DATA);
     const d = JSON.parse(raw);
     if (!d.tensions) d.tensions = [];
-    if (!d.settings) d.settings = { default_cycle_length: 28 };
+    if (!d.settings) d.settings = { default_cycle_length: 28, manual_cycle_length: null };
+    if (d.settings.manual_cycle_length === undefined) d.settings.manual_cycle_length = null;
+    if (d.onboarded === undefined) d.onboarded = false;
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -479,7 +736,66 @@ function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// ── Cycle Math (ported from marcy.py) ───────────────────────────
+// ── Export / Import ─────────────────────────────────────────────
+function exportData() {
+  const data = loadData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `marcy-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('backup downloaded');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.periods || !Array.isArray(data.periods)) {
+        toast('invalid backup file', true);
+        return;
+      }
+      if (!data.tensions) data.tensions = [];
+      if (!data.settings) data.settings = { default_cycle_length: 28, manual_cycle_length: null };
+      data.onboarded = true;
+      saveData(data);
+      toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
+      render();
+    } catch {
+      toast('invalid backup file', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Confirm Dialog ──────────────────────────────────────────────
+function showConfirm(msg, onConfirm) {
+  const root = document.getElementById('confirm-root');
+  root.innerHTML = `
+    <div class="confirm-overlay" onclick="if(event.target===this)dismissConfirm()">
+      <div class="confirm-box">
+        <div class="confirm-msg">${msg}</div>
+        <div class="confirm-actions">
+          <button class="confirm-cancel" onclick="dismissConfirm()">cancel</button>
+          <button class="confirm-delete" id="confirm-yes">delete</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('confirm-yes').addEventListener('click', () => {
+    dismissConfirm();
+    onConfirm();
+  });
+}
+
+function dismissConfirm() {
+  document.getElementById('confirm-root').innerHTML = '';
+}
+
+// ── Cycle Math ──────────────────────────────────────────────────
 function parseDate(s) {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -503,15 +819,36 @@ function addDays(d, n) {
 }
 
 function getCycleLength(data) {
+  // Manual override takes priority
+  if (data.settings.manual_cycle_length) return data.settings.manual_cycle_length;
+
   const periods = [...data.periods].sort();
   if (periods.length < 2) return data.settings.default_cycle_length;
+
   const diffs = [];
   for (let i = 1; i < periods.length; i++) {
     const d = daysBetween(parseDate(periods[i - 1]), parseDate(periods[i]));
     if (d >= 18 && d <= 45) diffs.push(d);
   }
   if (!diffs.length) return data.settings.default_cycle_length;
-  return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length);
+
+  // Weighted-recent: more recent cycles count more
+  // Weights: most recent = n, second most recent = n-1, etc.
+  if (diffs.length === 1) return diffs[0];
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (let i = 0; i < diffs.length; i++) {
+    const weight = i + 1; // oldest=1, newest=n
+    weightedSum += diffs[i] * weight;
+    totalWeight += weight;
+  }
+  return Math.round(weightedSum / totalWeight);
+}
+
+function getCycleLengthType(data) {
+  if (data.settings.manual_cycle_length) return 'manual';
+  if (data.periods.length < 2) return 'default';
+  return 'calculated';
 }
 
 function getPredictions(data) {
@@ -621,7 +958,7 @@ function getStatus() {
     today: isoDate(today),
     cycle_day: cycleDay,
     cycle_length: preds.cycleLength,
-    cycle_type: data.periods.length < 2 ? 'default' : 'calculated',
+    cycle_type: getCycleLengthType(data),
     last_period: isoDate(preds.lastPeriod),
     next_period: isoDate(preds.nextPeriod),
     fertile_start: isoDate(preds.fertileStart),
@@ -758,6 +1095,7 @@ const todayContent = {
 };
 
 let todayCardOpen = false;
+let termsOpen = false;
 
 function getPhaseKey(status) {
   const day = status.cycle_day;
@@ -800,11 +1138,96 @@ function toggleToday() {
   render();
 }
 
+function toggleTerms() {
+  termsOpen = !termsOpen;
+  render();
+}
+
+// ── Onboarding ──────────────────────────────────────────────────
+function renderOnboarding() {
+  const today = isoDate(new Date());
+  return `
+    <div class="onboard">
+      <div class="onboard-title">understand her cycle.<br>show up better.</div>
+      <div class="onboard-text">
+        Marcy tracks cycle phases and tells you what's going on — hormonally, emotionally — and how to be there for her. All data stays on this device. Nothing is sent anywhere.
+      </div>
+      <div class="onboard-field">
+        <div class="onboard-label">when did her last period start?</div>
+        <div class="log-form">
+          <input type="date" class="log-input" id="onboard-date" value="${today}">
+        </div>
+        <div class="onboard-note">best guess is fine — predictions improve with more data</div>
+      </div>
+      <div class="onboard-field">
+        <div class="onboard-label">cycle length (if known)</div>
+        <div class="onboard-row">
+          <input type="number" class="log-input settings-input" id="onboard-cycle" placeholder="28" min="18" max="45" style="width:80px">
+          <span style="font-size:12px;color:var(--text-muted)">days — leave blank for default (28)</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);line-height:1.8;margin-bottom:16px;margin-top:8px">
+        By continuing, you agree that Marcy provides <strong style="color:var(--text-dim);font-weight:500">estimates only</strong>, based on general medical conventions. This is not a medical device. It should not be relied upon for contraception, fertility planning, or any medical decisions. See full <button class="terms-toggle" style="display:inline;font-size:10px;padding:0;text-decoration:underline" onclick="document.getElementById('onboard-terms').style.display=document.getElementById('onboard-terms').style.display==='none'?'block':'none'">disclaimer</button>.
+        <div id="onboard-terms" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          All predictions are estimates based on general medical conventions regarding average menstrual cycle patterns, including a standard 14-day luteal phase assumption. Every person's cycle is different, and actual timing may vary significantly from these estimates.
+          <br><br>
+          The developers of Marcy assume no liability for any actions taken or not taken based on information provided by this app. Use at your own discretion and consult a healthcare provider for medical advice.
+          <br><br>
+          All data is stored locally on your device. Nothing is transmitted to any server. You are solely responsible for backing up your data.
+        </div>
+      </div>
+      <button class="onboard-btn" id="onboard-go">get started</button>
+      <button class="onboard-skip" id="onboard-restore">restore from backup</button>
+      <input type="file" accept=".json" class="backup-file" id="onboard-file">
+    </div>
+  `;
+}
+
+function bindOnboarding() {
+  const goBtn = document.getElementById('onboard-go');
+  const restoreBtn = document.getElementById('onboard-restore');
+  const fileInput = document.getElementById('onboard-file');
+
+  if (goBtn) {
+    goBtn.addEventListener('click', () => {
+      const dateVal = document.getElementById('onboard-date').value;
+      if (!dateVal) { toast('pick a date', true); return; }
+      const cycleVal = document.getElementById('onboard-cycle').value;
+      const data = loadData();
+      data.periods.push(dateVal);
+      data.periods.sort();
+      data.onboarded = true;
+      if (cycleVal) {
+        const n = parseInt(cycleVal);
+        if (n >= 18 && n <= 45) data.settings.manual_cycle_length = n;
+      }
+      saveData(data);
+      toast('welcome to marcy');
+      render();
+    });
+  }
+
+  if (restoreBtn && fileInput) {
+    restoreBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) importData(e.target.files[0]);
+    });
+  }
+}
+
 // ── Render ──────────────────────────────────────────────────────
 function render() {
+  const data = loadData();
+
+  // Show onboarding if never set up
+  if (!data.onboarded && data.periods.length === 0) {
+    $('#content').innerHTML = renderOnboarding();
+    bindOnboarding();
+    return;
+  }
+
   const status = getStatus();
   const history = getHistory();
-  const data = loadData();
   const tensions = [...(data.tensions || [])].sort();
 
   if (status.empty) {
@@ -818,11 +1241,14 @@ function render() {
     return;
   }
 
-  const pct = Math.min(status.cycle_day / status.cycle_length, 1);
+  const pct = status.phase === 'late'
+    ? 1
+    : Math.min(status.cycle_day / status.cycle_length, 1);
   const circumference = 2 * Math.PI * 52;
   const offset = circumference * (1 - pct);
 
-  const ringClass = status.phase === 'fertile' ? 'fertile' : status.phase === 'pms' ? 'pms' : '';
+  let ringClass = status.phase === 'fertile' ? 'fertile' : status.phase === 'pms' ? 'pms' : '';
+  if (status.phase === 'late') ringClass = 'late';
 
   const events = [
     { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
@@ -849,12 +1275,22 @@ function render() {
     const phaseMsgs = {
       fertile: 'high conception risk — be careful',
       pms: 'extra patience goes a long way',
-      late: 'period may be late',
+      late: 'period may be late — or it may have started',
     };
     html += `
       <div class="phase-banner ${status.phase}">
         <div class="phase-label">${status.phase_label}</div>
         <div class="phase-sub">${phaseMsgs[status.phase] || ''}</div>
+      </div>
+    `;
+  }
+
+  // Late period prompt
+  if (status.phase === 'late') {
+    html += `
+      <div class="late-prompt">
+        <div class="late-prompt-text">did her period start? log it to reset predictions.</div>
+        <button class="late-prompt-btn" onclick="document.getElementById('log-date').scrollIntoView({behavior:'smooth'})">log</button>
       </div>
     `;
   }
@@ -871,6 +1307,9 @@ function render() {
   }
 
   // Ring + meta
+  const cycleLenLabel = status.cycle_type === 'default' ? '(est)'
+    : status.cycle_type === 'manual' ? '(set)' : '';
+
   html += `
     <div class="ring-section">
       <div class="ring-container">
@@ -881,13 +1320,13 @@ function render() {
             stroke-dashoffset="${offset}"/>
         </svg>
         <div class="ring-text">
-          <div class="ring-day">${status.cycle_day}</div>
-          <div class="ring-label">of ${status.cycle_length}</div>
+          <div class="ring-day">${status.phase === 'late' ? '+' + (status.cycle_day - status.cycle_length) : status.cycle_day}</div>
+          <div class="ring-label">${status.phase === 'late' ? 'past due' : 'of ' + status.cycle_length}</div>
         </div>
       </div>
       <div class="ring-meta">
         last period<br><span>${fmtDate(status.last_period)}</span><br>
-        cycle length<br><span>${status.cycle_length}d ${status.cycle_type === 'default' ? '(est)' : ''}</span><br>
+        cycle length<br><span>${status.cycle_length}d ${cycleLenLabel}</span><br>
         tracked<br><span>${status.total_periods} period${status.total_periods !== 1 ? 's' : ''}</span>
       </div>
     </div>
@@ -944,7 +1383,7 @@ function render() {
         <div class="history-row">
           <span class="history-date">${fmtDate(f)}</span>
           <span class="history-len"></span>
-          <button class="history-del" onclick="delTension('${f}')">&times;</button>
+          <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
         </div>
       `;
     }
@@ -962,17 +1401,68 @@ function render() {
         <div class="history-row">
           <span class="history-date">${fmtDate(e.date)}</span>
           <span class="history-len">${lenStr}</span>
-          <button class="history-del" onclick="del('${e.date}')">&times;</button>
+          <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
         </div>
       `;
     }
     html += `</div>`;
   }
 
+  // Settings
+  html += `
+    <div class="settings-section">
+      <div class="section-title">settings</div>
+      <div class="settings-row">
+        <span class="settings-label">cycle length override</span>
+        <div class="settings-value">
+          <input type="number" class="settings-input" id="settings-cycle" min="18" max="45"
+            placeholder="${data.settings.manual_cycle_length || getCycleLength(data)}"
+            value="${data.settings.manual_cycle_length || ''}">
+          <button class="settings-save" id="settings-save-cycle">save</button>
+        </div>
+      </div>
+      <div class="settings-row" style="border-bottom:none">
+        <span class="settings-label" style="font-size:11px;color:var(--text-muted)">
+          ${data.settings.manual_cycle_length ? 'manual override active — clear to use auto-calculation' : 'blank = auto-calculated from logged periods'}
+        </span>
+        ${data.settings.manual_cycle_length ? '<button class="settings-save" id="settings-clear-cycle">clear</button>' : ''}
+      </div>
+    </div>
+  `;
+
+  // Backup
+  html += `
+    <div class="settings-section">
+      <div class="section-title">data</div>
+      <div class="backup-row">
+        <button class="backup-btn" onclick="exportData()">export backup</button>
+        <button class="backup-btn" onclick="document.getElementById('import-file').click()">import backup</button>
+        <input type="file" accept=".json" class="backup-file" id="import-file">
+      </div>
+    </div>
+  `;
+
+  // Terms
+  html += `
+    <div class="settings-section" style="margin-bottom:0">
+      <button class="terms-toggle" onclick="toggleTerms()">${termsOpen ? '▾' : '▸'} disclaimer</button>
+      ${termsOpen ? `<div class="terms">
+        All predictions are estimates based on general medical conventions regarding average menstrual cycle patterns, including a standard 14-day luteal phase assumption. Every person's cycle is different, and actual timing may vary significantly from these estimates.
+        <br><br>
+        Marcy is not a medical device and is not intended to diagnose, treat, or prevent any condition. This app should not be relied upon for contraception, fertility planning, or any medical decision-making.
+        <br><br>
+        The developers of Marcy assume no liability for any actions taken or not taken based on information provided by this app. Use at your own discretion and consult a healthcare provider for medical advice.
+        <br><br>
+        All data is stored locally on your device. Nothing is transmitted to any server. You are solely responsible for backing up your data.
+      </div>` : ''}
+    </div>
+  `;
+
   html += `<div class="footer">marcy &middot; local &middot; private</div>`;
 
   $('#content').innerHTML = html;
   bindForms();
+  bindSettings();
 }
 
 function logForm() {
@@ -1000,7 +1490,7 @@ function tensionForm() {
 }
 
 function bindForms() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = isoDate(new Date());
 
   const logInput = $('#log-date');
   const logBtn = $('#log-btn');
@@ -1035,22 +1525,66 @@ function bindForms() {
       render();
     });
   }
+
+  // Import file handler
+  const importFile = document.getElementById('import-file');
+  if (importFile) {
+    importFile.addEventListener('change', (e) => {
+      if (e.target.files[0]) importData(e.target.files[0]);
+    });
+  }
 }
 
-function del(dateStr) {
-  const data = loadData();
-  data.periods = data.periods.filter(p => p !== dateStr);
-  saveData(data);
-  toast(`removed ${fmtDate(dateStr)}`);
-  render();
+function bindSettings() {
+  const saveBtn = document.getElementById('settings-save-cycle');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const input = document.getElementById('settings-cycle');
+      const val = input.value.trim();
+      const data = loadData();
+      if (!val) {
+        data.settings.manual_cycle_length = null;
+      } else {
+        const n = parseInt(val);
+        if (n < 18 || n > 45) { toast('cycle length must be 18-45 days', true); return; }
+        data.settings.manual_cycle_length = n;
+      }
+      saveData(data);
+      toast(val ? `cycle length set to ${val}d` : 'using auto-calculation');
+      render();
+    });
+  }
+
+  const clearBtn = document.getElementById('settings-clear-cycle');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      const data = loadData();
+      data.settings.manual_cycle_length = null;
+      saveData(data);
+      toast('using auto-calculation');
+      render();
+    });
+  }
 }
 
-function delTension(dateStr) {
-  const data = loadData();
-  data.tensions = data.tensions.filter(t => t !== dateStr);
-  saveData(data);
-  toast(`removed tension ${fmtDate(dateStr)}`);
-  render();
+function confirmDel(dateStr) {
+  showConfirm(`Remove period ${fmtDate(dateStr)}?<br><span style="font-size:11px;color:var(--text-dim)">This will affect cycle calculations.</span>`, () => {
+    const data = loadData();
+    data.periods = data.periods.filter(p => p !== dateStr);
+    saveData(data);
+    toast(`removed ${fmtDate(dateStr)}`);
+    render();
+  });
+}
+
+function confirmDelTension(dateStr) {
+  showConfirm(`Remove tension event ${fmtDate(dateStr)}?`, () => {
+    const data = loadData();
+    data.tensions = data.tensions.filter(t => t !== dateStr);
+    saveData(data);
+    toast(`removed tension ${fmtDate(dateStr)}`);
+    render();
+  });
 }
 
 // PWA
