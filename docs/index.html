@@ -40,7 +40,7 @@
   .app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 24px 20px;
+    padding: 24px 20px 72px;
     min-height: 100vh;
   }
 
@@ -238,7 +238,7 @@
 
   .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: 72px;
     left: 50%;
     transform: translateX(-50%) translateY(80px);
     background: var(--surface2);
@@ -333,12 +333,6 @@
     color: var(--text-muted);
   }
 
-  .tension-form {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
   /* Today Card */
   .today-btn {
     width: 100%;
@@ -377,13 +371,6 @@
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-  .today-phase-name {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 12px;
   }
   .today-section-label {
     font-size: 10px;
@@ -532,6 +519,8 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     margin-bottom: 32px;
+  }
+  .late-prompt-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -540,6 +529,11 @@
   .late-prompt-text {
     font-size: 12px;
     color: var(--text-dim);
+  }
+  .late-prompt-extra {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
   }
   .late-prompt-btn {
     background: var(--blue);
@@ -558,7 +552,54 @@
   }
   .late-prompt-btn:hover { opacity: 0.85; }
 
-  /* Settings section */
+  /* Learning note */
+  .learning-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 32px;
+  }
+  .learning-note strong {
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* Email prompt */
+  .email-prompt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 32px;
+  }
+  .email-prompt-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .email-prompt-form {
+    display: flex;
+    gap: 8px;
+  }
+  .email-prompt-skip {
+    display: block;
+    text-align: center;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    margin-top: 4px;
+  }
+  .email-prompt-skip:hover { color: var(--text-dim); }
+
+  /* Settings */
   .settings-section {
     margin-bottom: 40px;
   }
@@ -606,7 +647,7 @@
   }
   .settings-save:hover { color: var(--text); border-color: var(--text-dim); }
 
-  /* Backup buttons */
+  /* Backup */
   .backup-row {
     display: flex;
     gap: 8px;
@@ -629,9 +670,7 @@
     transition: all 0.2s;
   }
   .backup-btn:hover { color: var(--text); border-color: var(--text-dim); }
-  .backup-file {
-    display: none;
-  }
+  .backup-file { display: none; }
 
   /* Terms */
   .terms {
@@ -655,6 +694,40 @@
     transition: color 0.2s;
   }
   .terms-toggle:hover { color: var(--text-dim); }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 50;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .nav-tab {
+    flex: 1;
+    padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+    text-align: center;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .nav-tab.active {
+    color: var(--text);
+  }
+  .nav-tab:hover {
+    color: var(--text-dim);
+  }
 
   /* Footer */
   .footer {
@@ -686,7 +759,7 @@
 
   /* Mobile tweaks */
   @media (max-width: 400px) {
-    .app { padding: 16px; }
+    .app { padding: 16px 16px 72px; }
     .ring-section { gap: 20px; }
     .ring-container { width: 100px; height: 100px; }
     .ring-day { font-size: 26px; }
@@ -705,9 +778,17 @@
 
   <div class="toast" id="toast"></div>
   <div id="confirm-root"></div>
+
+  <nav class="bottom-nav" id="bottom-nav" style="display:none">
+    <button class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">dashboard</button>
+    <button class="nav-tab" data-view="manage" onclick="switchView('manage')">manage</button>
+  </nav>
 </div>
 
 <script>
+// ── Config ──────────────────────────────────────────────────────
+const FORMSPREE_URL = 'https://formspree.io/f/mdayreqr';
+
 // ── Data Layer (localStorage) ───────────────────────────────────
 const STORAGE_KEY = 'marcy_data';
 const DEFAULT_DATA = {
@@ -715,6 +796,8 @@ const DEFAULT_DATA = {
   tensions: [],
   settings: { default_cycle_length: 28, manual_cycle_length: null },
   onboarded: false,
+  email_prompted: false,
+  email: null,
 };
 
 function loadData() {
@@ -726,6 +809,8 @@ function loadData() {
     if (!d.settings) d.settings = { default_cycle_length: 28, manual_cycle_length: null };
     if (d.settings.manual_cycle_length === undefined) d.settings.manual_cycle_length = null;
     if (d.onboarded === undefined) d.onboarded = false;
+    if (d.email_prompted === undefined) d.email_prompted = false;
+    if (d.email === undefined) d.email = null;
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -761,6 +846,8 @@ function importData(file) {
       if (!data.tensions) data.tensions = [];
       if (!data.settings) data.settings = { default_cycle_length: 28, manual_cycle_length: null };
       data.onboarded = true;
+      if (data.email_prompted === undefined) data.email_prompted = false;
+      if (data.email === undefined) data.email = null;
       saveData(data);
       toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
       render();
@@ -818,27 +905,25 @@ function addDays(d, n) {
   return r;
 }
 
-function getCycleLength(data) {
-  // Manual override takes priority
-  if (data.settings.manual_cycle_length) return data.settings.manual_cycle_length;
+function dayOfYear() {
+  const now = new Date();
+  return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+}
 
+function getCycleLength(data) {
+  if (data.settings.manual_cycle_length) return data.settings.manual_cycle_length;
   const periods = [...data.periods].sort();
   if (periods.length < 2) return data.settings.default_cycle_length;
-
   const diffs = [];
   for (let i = 1; i < periods.length; i++) {
     const d = daysBetween(parseDate(periods[i - 1]), parseDate(periods[i]));
     if (d >= 18 && d <= 45) diffs.push(d);
   }
   if (!diffs.length) return data.settings.default_cycle_length;
-
-  // Weighted-recent: more recent cycles count more
-  // Weights: most recent = n, second most recent = n-1, etc.
   if (diffs.length === 1) return diffs[0];
-  let weightedSum = 0;
-  let totalWeight = 0;
+  let weightedSum = 0, totalWeight = 0;
   for (let i = 0; i < diffs.length; i++) {
-    const weight = i + 1; // oldest=1, newest=n
+    const weight = i + 1;
     weightedSum += diffs[i] * weight;
     totalWeight += weight;
   }
@@ -861,18 +946,13 @@ function getPredictions(data) {
   const fertileStart = addDays(ovulationDay, -4);
   const fertileEnd = addDays(ovulationDay, 1);
   const pmsStart = addDays(nextPeriod, -7);
-  return {
-    lastPeriod: lastStart,
-    cycleLength: cycleLen,
-    nextPeriod, ovulationDay, fertileStart, fertileEnd, pmsStart,
-  };
+  return { lastPeriod: lastStart, cycleLength: cycleLen, nextPeriod, ovulationDay, fertileStart, fertileEnd, pmsStart };
 }
 
 function getTensionAnalysis(data) {
   const tensions = [...(data.tensions || [])].sort();
   const periods = [...data.periods].sort();
   if (!tensions.length || !periods.length) return null;
-
   const daysBeforePeriod = [];
   for (const t of tensions) {
     const tDate = parseDate(t);
@@ -894,9 +974,7 @@ function getTensionAnalysis(data) {
       }
     }
   }
-
   if (!daysBeforePeriod.length) return null;
-
   const freq = {};
   for (const d of daysBeforePeriod) freq[d] = (freq[d] || 0) + 1;
   let hottestDay = daysBeforePeriod[0], maxCount = 0;
@@ -904,25 +982,16 @@ function getTensionAnalysis(data) {
     if (count > maxCount) { maxCount = count; hottestDay = Number(day); }
   }
   const avg = Math.round(daysBeforePeriod.reduce((a, b) => a + b, 0) / daysBeforePeriod.length * 10) / 10;
-
-  return {
-    total_fights: tensions.length,
-    mapped_fights: daysBeforePeriod.length,
-    avg_days_before: avg,
-    hottest_day_before: hottestDay,
-    frequency: freq,
-  };
+  return { total_fights: tensions.length, mapped_fights: daysBeforePeriod.length, avg_days_before: avg, hottest_day_before: hottestDay, frequency: freq };
 }
 
 function getStatus() {
   const data = loadData();
   const preds = getPredictions(data);
   if (!preds) return { empty: true };
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
-
   let phase = 'normal', phaseLabel = '';
   if (preds.fertileStart <= today && today <= preds.fertileEnd) {
     phase = 'fertile'; phaseLabel = 'FERTILE WINDOW';
@@ -933,46 +1002,29 @@ function getStatus() {
   } else if (today >= preds.nextPeriod) {
     const daysLate = daysBetween(preds.nextPeriod, today);
     phase = 'late';
-    phaseLabel = daysLate === 0 ? 'PERIOD TODAY' : `PERIOD ${daysLate}D LATE`;
+    if (daysLate <= 2) phaseLabel = 'PERIOD EXPECTED';
+    else phaseLabel = `PERIOD ${daysLate}D LATE`;
   }
-
   const daysToFertile = daysBetween(today, preds.fertileStart);
   const daysToPms = daysBetween(today, preds.pmsStart);
   const daysToPeriod = daysBetween(today, preds.nextPeriod);
   const daysToOvulation = daysBetween(today, preds.ovulationDay);
-
   const tensionData = getTensionAnalysis(data);
   let tensionAlert = null;
   if (tensionData) {
     const hotDay = tensionData.hottest_day_before;
     const hotDate = addDays(preds.nextPeriod, -hotDay);
-    tensionAlert = {
-      hottest_day_before_period: hotDay,
-      days_until_hot_day: daysBetween(today, hotDate),
-      hot_date: isoDate(hotDate),
-    };
+    tensionAlert = { hottest_day_before_period: hotDay, days_until_hot_day: daysBetween(today, hotDate), hot_date: isoDate(hotDate) };
   }
-
   return {
-    empty: false,
-    today: isoDate(today),
-    cycle_day: cycleDay,
-    cycle_length: preds.cycleLength,
-    cycle_type: getCycleLengthType(data),
-    last_period: isoDate(preds.lastPeriod),
-    next_period: isoDate(preds.nextPeriod),
-    fertile_start: isoDate(preds.fertileStart),
-    fertile_end: isoDate(preds.fertileEnd),
-    ovulation_day: isoDate(preds.ovulationDay),
-    pms_start: isoDate(preds.pmsStart),
-    phase, phase_label: phaseLabel,
-    days_to_fertile: daysToFertile,
-    days_to_pms: daysToPms,
-    days_to_period: daysToPeriod,
-    days_to_ovulation: daysToOvulation,
-    total_periods: data.periods.length,
-    tension_analysis: tensionData,
-    tension_alert: tensionAlert,
+    empty: false, today: isoDate(today), cycle_day: cycleDay, cycle_length: preds.cycleLength,
+    cycle_type: getCycleLengthType(data), last_period: isoDate(preds.lastPeriod),
+    next_period: isoDate(preds.nextPeriod), fertile_start: isoDate(preds.fertileStart),
+    fertile_end: isoDate(preds.fertileEnd), ovulation_day: isoDate(preds.ovulationDay),
+    pms_start: isoDate(preds.pmsStart), phase, phase_label: phaseLabel,
+    days_to_fertile: daysToFertile, days_to_pms: daysToPms, days_to_period: daysToPeriod,
+    days_to_ovulation: daysToOvulation, total_periods: data.periods.length,
+    tension_analysis: tensionData, tension_alert: tensionAlert,
   };
 }
 
@@ -984,14 +1036,10 @@ function getHistory() {
     if (i > 0) entry.cycle_length = daysBetween(parseDate(periods[i - 1]), parseDate(p));
     return entry;
   });
-  return {
-    entries,
-    average: getCycleLength(data),
-    total_cycles: Math.max(0, periods.length - 1),
-  };
+  return { entries, average: getCycleLength(data), total_cycles: Math.max(0, periods.length - 1) };
 }
 
-// ── UI ──────────────────────────────────────────────────────────
+// ── UI Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 
 function toast(msg, isError) {
@@ -1013,6 +1061,46 @@ function countdown(days) {
   if (days <= 3) return { text: `${days}d`, cls: 'danger' };
   if (days <= 7) return { text: `${days}d`, cls: 'soon' };
   return { text: `${days}d`, cls: '' };
+}
+
+// ── Reassurance Notes ───────────────────────────────────────────
+function getEarlyTrackingNote(data) {
+  const count = data.periods.length;
+  if (count >= 3 || count < 1) return null;
+  const notes = {
+    1: [
+      "marcy is just getting started — predictions are based on a general 28-day estimate. <strong>most cycles fall between 21 and 35 days.</strong> it'll get smarter as you log more.",
+      "first cycle logged. right now marcy is using a standard estimate. <strong>every cycle you log makes predictions more accurate.</strong>",
+      "one data point so far — <strong>marcy will learn her actual pattern over the next few cycles.</strong> don't worry if timing feels off at first.",
+    ],
+    2: [
+      "two cycles tracked — <strong>marcy is starting to learn her rhythm.</strong> predictions are improving but still early. normal cycles range 21–35 days.",
+      "getting closer. with two data points, <strong>marcy has its first real calculation.</strong> a few more cycles and predictions will be dialed in.",
+      "marcy just calculated its first real cycle length. <strong>patterns usually stabilize after 3–4 tracked cycles.</strong>",
+    ],
+  };
+  return notes[count][dayOfYear() % notes[count].length];
+}
+
+function getLateReassurance(daysLate, data) {
+  const general = [
+    "cycles vary — travel, stress, sleep changes, and time zone shifts can all push things back",
+    "a few days' variation is completely normal — cycles aren't clocks",
+    "stress, diet changes, illness, or intense exercise can all delay a period by several days",
+    "cycle lengths naturally fluctuate — even consistent cycles shift by a few days sometimes",
+  ];
+  let msg = '';
+  if (daysLate <= 2) {
+    msg = "should arrive any time now — " + general[dayOfYear() % general.length];
+  } else if (daysLate <= 5) {
+    msg = general[dayOfYear() % general.length];
+  } else {
+    msg = general[dayOfYear() % general.length] + ". if this continues much longer, she may want to check in with a doctor";
+  }
+  if (data.periods.length < 3) {
+    msg += " — marcy is still learning her pattern, so the prediction may simply be off";
+  }
+  return msg;
 }
 
 // ── Today's Read ────────────────────────────────────────────────
@@ -1096,6 +1184,7 @@ const todayContent = {
 
 let todayCardOpen = false;
 let termsOpen = false;
+let currentView = 'dashboard';
 
 function getPhaseKey(status) {
   const day = status.cycle_day;
@@ -1116,12 +1205,10 @@ function todayButton(status) {
   const content = todayContent[key];
   const insight = pickVariant(content.insights, status.cycle_day);
   const connect = pickVariant(content.connect, status.cycle_day);
-
   let html = `<button class="today-btn${todayCardOpen ? ' open' : ''}" onclick="toggleToday()">
     <span>today's read — <span style="color:var(--text-muted)">${content.label}</span></span>
     <span class="today-arrow">&#9654;</span>
   </button>`;
-
   if (todayCardOpen) {
     html += `<div class="today-card">
       <div class="today-section-label">where she is</div>
@@ -1133,15 +1220,9 @@ function todayButton(status) {
   return html;
 }
 
-function toggleToday() {
-  todayCardOpen = !todayCardOpen;
-  render();
-}
-
-function toggleTerms() {
-  termsOpen = !termsOpen;
-  render();
-}
+function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
+function toggleTerms() { termsOpen = !termsOpen; render(); }
+function switchView(view) { currentView = view; window.scrollTo(0, 0); render(); }
 
 // ── Onboarding ──────────────────────────────────────────────────
 function renderOnboarding() {
@@ -1187,7 +1268,6 @@ function bindOnboarding() {
   const goBtn = document.getElementById('onboard-go');
   const restoreBtn = document.getElementById('onboard-restore');
   const fileInput = document.getElementById('onboard-file');
-
   if (goBtn) {
     goBtn.addEventListener('click', () => {
       const dateVal = document.getElementById('onboard-date').value;
@@ -1206,81 +1286,51 @@ function bindOnboarding() {
       render();
     });
   }
-
   if (restoreBtn && fileInput) {
     restoreBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files[0]) importData(e.target.files[0]);
-    });
+    fileInput.addEventListener('change', (e) => { if (e.target.files[0]) importData(e.target.files[0]); });
   }
 }
 
-// ── Render ──────────────────────────────────────────────────────
-function render() {
+// ── Email ───────────────────────────────────────────────────────
+function submitEmail(email) {
   const data = loadData();
-
-  // Show onboarding if never set up
-  if (!data.onboarded && data.periods.length === 0) {
-    $('#content').innerHTML = renderOnboarding();
-    bindOnboarding();
-    return;
+  data.email = email;
+  data.email_prompted = true;
+  saveData(data);
+  if (FORMSPREE_URL) {
+    fetch(FORMSPREE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).catch(() => {});
   }
+  toast('thanks — we\'ll keep you posted');
+  render();
+}
 
-  const status = getStatus();
-  const history = getHistory();
-  const tensions = [...(data.tensions || [])].sort();
+function skipEmail() {
+  const data = loadData();
+  data.email_prompted = true;
+  saveData(data);
+  render();
+}
 
-  if (status.empty) {
-    $('#content').innerHTML = `
-      <div class="empty">
-        no data yet.<br>log a period to get started.
-      </div>
-      ${logForm()}
-    `;
-    bindForms();
-    return;
-  }
-
-  const pct = status.phase === 'late'
-    ? 1
-    : Math.min(status.cycle_day / status.cycle_length, 1);
-  const circumference = 2 * Math.PI * 52;
-  const offset = circumference * (1 - pct);
-
-  let ringClass = status.phase === 'fertile' ? 'fertile' : status.phase === 'pms' ? 'pms' : '';
-  if (status.phase === 'late') ringClass = 'late';
-
-  const events = [
-    { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
-    { label: 'Ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
-    { label: 'PMS starts', date: status.pms_start, days: status.days_to_pms },
-  ];
-
-  if (status.tension_alert) {
-    events.push({
-      label: 'Peak tension',
-      date: status.tension_alert.hot_date,
-      days: status.tension_alert.days_until_hot_day,
-      isTension: true,
-    });
-  }
-
-  events.push({ label: 'Next period', date: status.next_period, days: status.days_to_period });
-  events.sort((a, b) => a.days - b.days);
-
+// ── Dashboard View ──────────────────────────────────────────────
+function renderDashboard(status, data) {
   let html = '';
+  const daysLate = status.phase === 'late' ? status.cycle_day - status.cycle_length : 0;
 
   // Phase banner
   if (status.phase_label) {
-    const phaseMsgs = {
-      fertile: 'high conception risk — be careful',
-      pms: 'extra patience goes a long way',
-      late: 'period may be late — or it may have started',
-    };
+    let subMsg = '';
+    if (status.phase === 'fertile') subMsg = 'high conception risk — be careful';
+    else if (status.phase === 'pms') subMsg = 'extra patience goes a long way';
+    else if (status.phase === 'late') subMsg = getLateReassurance(daysLate, data);
     html += `
       <div class="phase-banner ${status.phase}">
         <div class="phase-label">${status.phase_label}</div>
-        <div class="phase-sub">${phaseMsgs[status.phase] || ''}</div>
+        <div class="phase-sub">${subMsg}</div>
       </div>
     `;
   }
@@ -1289,8 +1339,11 @@ function render() {
   if (status.phase === 'late') {
     html += `
       <div class="late-prompt">
-        <div class="late-prompt-text">did her period start? log it to reset predictions.</div>
-        <button class="late-prompt-btn" onclick="document.getElementById('log-date').scrollIntoView({behavior:'smooth'})">log</button>
+        <div class="late-prompt-top">
+          <div class="late-prompt-text">did her period start? log it to reset predictions.</div>
+          <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
+        </div>
+        ${data.periods.length < 3 ? '<div class="late-prompt-extra">predictions are still calibrating — this may not actually be late</div>' : ''}
       </div>
     `;
   }
@@ -1306,9 +1359,27 @@ function render() {
     `;
   }
 
+  // Email prompt (one-time)
+  if (data.onboarded && !data.email_prompted) {
+    html += `
+      <div class="email-prompt">
+        <div class="email-prompt-text">want updates as marcy grows? drop your email — no spam, no sharing.</div>
+        <div class="email-prompt-form">
+          <input type="email" class="log-input" id="email-input" placeholder="email@example.com">
+          <button class="log-btn" style="font-size:11px;padding:10px 14px" onclick="const v=document.getElementById('email-input').value;if(v&&v.includes('@'))submitEmail(v);else toast('enter a valid email',true)">send</button>
+        </div>
+        <button class="email-prompt-skip" onclick="skipEmail()">skip</button>
+      </div>
+    `;
+  }
+
   // Ring + meta
-  const cycleLenLabel = status.cycle_type === 'default' ? '(est)'
-    : status.cycle_type === 'manual' ? '(set)' : '';
+  const pct = status.phase === 'late' ? 1 : Math.min(status.cycle_day / status.cycle_length, 1);
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference * (1 - pct);
+  let ringClass = status.phase === 'fertile' ? 'fertile' : status.phase === 'pms' ? 'pms' : '';
+  if (status.phase === 'late') ringClass = 'late';
+  const cycleLenLabel = status.cycle_type === 'default' ? '(est)' : status.cycle_type === 'manual' ? '(set)' : '';
 
   html += `
     <div class="ring-section">
@@ -1320,7 +1391,7 @@ function render() {
             stroke-dashoffset="${offset}"/>
         </svg>
         <div class="ring-text">
-          <div class="ring-day">${status.phase === 'late' ? '+' + (status.cycle_day - status.cycle_length) : status.cycle_day}</div>
+          <div class="ring-day">${status.phase === 'late' ? '+' + daysLate : status.cycle_day}</div>
           <div class="ring-label">${status.phase === 'late' ? 'past due' : 'of ' + status.cycle_length}</div>
         </div>
       </div>
@@ -1332,10 +1403,27 @@ function render() {
     </div>
   `;
 
+  // Early tracking note
+  const earlyNote = getEarlyTrackingNote(data);
+  if (earlyNote) {
+    html += `<div class="learning-note">${earlyNote}</div>`;
+  }
+
   // Today button
   html += todayButton(status);
 
   // Timeline
+  const events = [
+    { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
+    { label: 'Ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
+    { label: 'PMS starts', date: status.pms_start, days: status.days_to_pms },
+  ];
+  if (status.tension_alert) {
+    events.push({ label: 'Peak tension', date: status.tension_alert.hot_date, days: status.tension_alert.days_until_hot_day, isTension: true });
+  }
+  events.push({ label: 'Next period', date: status.next_period, days: status.days_to_period });
+  events.sort((a, b) => a.days - b.days);
+
   html += `<div class="timeline"><div class="timeline-title">upcoming</div>`;
   for (const ev of events) {
     const cd = countdown(ev.days);
@@ -1371,9 +1459,30 @@ function render() {
     html += `</div></div>`;
   }
 
+  return html;
+}
+
+// ── Manage View ─────────────────────────────────────────────────
+function renderManage(status, data, history, tensions) {
+  let html = '';
+
   // Log forms
-  html += logForm();
-  html += tensionForm();
+  html += `
+    <div class="log-section">
+      <div class="section-title">log period</div>
+      <div class="log-form">
+        <input type="date" class="log-input" id="log-date">
+        <button class="log-btn" id="log-btn">log</button>
+      </div>
+    </div>
+    <div class="log-section">
+      <div class="section-title">log tension</div>
+      <div class="log-form">
+        <input type="date" class="log-input" id="tension-date">
+        <button class="log-btn" id="tension-btn" style="background:var(--yellow);color:var(--bg)">log</button>
+      </div>
+    </div>
+  `;
 
   // Tension history
   if (tensions.length > 0) {
@@ -1430,6 +1539,21 @@ function render() {
     </div>
   `;
 
+  // Email in settings
+  html += `
+    <div class="settings-section">
+      <div class="section-title">email</div>
+      <div class="settings-row" style="border-bottom:none">
+        ${data.email
+          ? `<span class="settings-label">${data.email}</span><button class="settings-save" id="settings-clear-email">remove</button>`
+          : `<input type="email" class="log-input" id="settings-email" placeholder="email@example.com" style="flex:1">
+             <button class="settings-save" id="settings-save-email" style="margin-left:8px">save</button>`
+        }
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);padding-top:4px">for product updates only — sent to Formspree</div>
+    </div>
+  `;
+
   // Backup
   html += `
     <div class="settings-section">
@@ -1442,7 +1566,7 @@ function render() {
     </div>
   `;
 
-  // Terms
+  // Disclaimer
   html += `
     <div class="settings-section" style="margin-bottom:0">
       <button class="terms-toggle" onclick="toggleTerms()">${termsOpen ? '▾' : '▸'} disclaimer</button>
@@ -1453,42 +1577,63 @@ function render() {
         <br><br>
         The developers of Marcy assume no liability for any actions taken or not taken based on information provided by this app. Use at your own discretion and consult a healthcare provider for medical advice.
         <br><br>
-        All data is stored locally on your device. Nothing is transmitted to any server. You are solely responsible for backing up your data.
+        All data is stored locally on your device. If you provide your email, it is sent to a third-party service (Formspree) for storage. No other data leaves your device. You are solely responsible for backing up your data.
       </div>` : ''}
     </div>
   `;
 
   html += `<div class="footer">marcy &middot; local &middot; private</div>`;
-
-  $('#content').innerHTML = html;
-  bindForms();
-  bindSettings();
+  return html;
 }
 
-function logForm() {
-  return `
-    <div class="log-section">
-      <div class="section-title">log period</div>
-      <div class="log-form">
-        <input type="date" class="log-input" id="log-date">
-        <button class="log-btn" id="log-btn">log</button>
+// ── Main Render ─────────────────────────────────────────────────
+function render() {
+  const data = loadData();
+  const nav = document.getElementById('bottom-nav');
+
+  // Onboarding
+  if (!data.onboarded && data.periods.length === 0) {
+    $('#content').innerHTML = renderOnboarding();
+    bindOnboarding();
+    if (nav) nav.style.display = 'none';
+    return;
+  }
+
+  // Show nav
+  if (nav) nav.style.display = 'flex';
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === currentView);
+  });
+
+  const status = getStatus();
+  const history = getHistory();
+  const tensions = [...(data.tensions || [])].sort();
+
+  if (status.empty) {
+    $('#content').innerHTML = `
+      <div class="empty">no data yet.<br>log a period to get started.</div>
+      <div class="log-section">
+        <div class="section-title">log period</div>
+        <div class="log-form">
+          <input type="date" class="log-input" id="log-date">
+          <button class="log-btn" id="log-btn">log</button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+    bindForms();
+    return;
+  }
+
+  if (currentView === 'dashboard') {
+    $('#content').innerHTML = renderDashboard(status, data);
+  } else {
+    $('#content').innerHTML = renderManage(status, data, history, tensions);
+    bindForms();
+    bindSettings();
+  }
 }
 
-function tensionForm() {
-  return `
-    <div class="log-section">
-      <div class="section-title">log tension</div>
-      <div class="log-form">
-        <input type="date" class="log-input" id="tension-date">
-        <button class="log-btn" id="tension-btn" style="background:var(--yellow);color:var(--bg)">log</button>
-      </div>
-    </div>
-  `;
-}
-
+// ── Form Binding ────────────────────────────────────────────────
 function bindForms() {
   const today = isoDate(new Date());
 
@@ -1501,10 +1646,18 @@ function bindForms() {
       if (!val) return;
       const data = loadData();
       if (data.periods.includes(val)) { toast(`${val} already logged`, true); return; }
+      const prevCount = data.periods.length;
       data.periods.push(val);
       data.periods.sort();
       saveData(data);
-      toast(`logged ${fmtDate(val)}`);
+      // First real cycle acknowledgment
+      if (prevCount === 1) {
+        const cycleLen = getCycleLength(data);
+        toast(`first cycle: ${cycleLen} days — marcy is learning`);
+      } else {
+        toast(`logged ${fmtDate(val)}`);
+      }
+      currentView = 'dashboard';
       render();
     });
   }
@@ -1522,6 +1675,7 @@ function bindForms() {
       data.tensions.sort();
       saveData(data);
       toast(`logged tension ${fmtDate(val)}`);
+      currentView = 'dashboard';
       render();
     });
   }
@@ -1529,9 +1683,7 @@ function bindForms() {
   // Import file handler
   const importFile = document.getElementById('import-file');
   if (importFile) {
-    importFile.addEventListener('change', (e) => {
-      if (e.target.files[0]) importData(e.target.files[0]);
-    });
+    importFile.addEventListener('change', (e) => { if (e.target.files[0]) importData(e.target.files[0]); });
   }
 }
 
@@ -1542,9 +1694,8 @@ function bindSettings() {
       const input = document.getElementById('settings-cycle');
       const val = input.value.trim();
       const data = loadData();
-      if (!val) {
-        data.settings.manual_cycle_length = null;
-      } else {
+      if (!val) { data.settings.manual_cycle_length = null; }
+      else {
         const n = parseInt(val);
         if (n < 18 || n > 45) { toast('cycle length must be 18-45 days', true); return; }
         data.settings.manual_cycle_length = n;
@@ -1562,6 +1713,28 @@ function bindSettings() {
       data.settings.manual_cycle_length = null;
       saveData(data);
       toast('using auto-calculation');
+      render();
+    });
+  }
+
+  // Email settings
+  const saveEmail = document.getElementById('settings-save-email');
+  if (saveEmail) {
+    saveEmail.addEventListener('click', () => {
+      const input = document.getElementById('settings-email');
+      const val = input.value.trim();
+      if (!val || !val.includes('@')) { toast('enter a valid email', true); return; }
+      submitEmail(val);
+    });
+  }
+
+  const clearEmail = document.getElementById('settings-clear-email');
+  if (clearEmail) {
+    clearEmail.addEventListener('click', () => {
+      const data = loadData();
+      data.email = null;
+      saveData(data);
+      toast('email removed');
       render();
     });
   }
