@@ -1257,6 +1257,13 @@ function renderOnboarding() {
           All data is stored locally on your device. Nothing is transmitted to any server. You are solely responsible for backing up your data.
         </div>
       </div>
+      <div class="onboard-field">
+        <div class="onboard-label">email (optional)</div>
+        <div class="log-form">
+          <input type="email" class="log-input" id="onboard-email" placeholder="email@example.com">
+        </div>
+        <div class="onboard-note">for product updates only — no spam, no sharing</div>
+      </div>
       <button class="onboard-btn" id="onboard-go">get started</button>
       <button class="onboard-skip" id="onboard-restore">restore from backup</button>
       <input type="file" accept=".json" class="backup-file" id="onboard-file">
@@ -1280,6 +1287,12 @@ function bindOnboarding() {
       if (cycleVal) {
         const n = parseInt(cycleVal);
         if (n >= 18 && n <= 45) data.settings.manual_cycle_length = n;
+      }
+      const emailVal = document.getElementById('onboard-email').value.trim();
+      if (emailVal && emailVal.includes('@')) {
+        data.email = emailVal;
+        data.email_prompted = true;
+        submitEmail(emailVal);
       }
       saveData(data);
       toast('welcome to marcy');
@@ -1355,20 +1368,6 @@ function renderDashboard(status, data) {
       <div class="tension-alert">
         <div class="phase-label">TENSION ALERT</div>
         <div class="phase-sub">${fa.days_until_hot_day === 0 ? 'peak tension day — tread lightly' : `peak tension in ${fa.days_until_hot_day}d — be extra thoughtful`}</div>
-      </div>
-    `;
-  }
-
-  // Email prompt (one-time)
-  if (data.onboarded && !data.email_prompted) {
-    html += `
-      <div class="email-prompt">
-        <div class="email-prompt-text">want updates as marcy grows? drop your email — no spam, no sharing.</div>
-        <div class="email-prompt-form">
-          <input type="email" class="log-input" id="email-input" placeholder="email@example.com">
-          <button class="log-btn" style="font-size:11px;padding:10px 14px" onclick="const v=document.getElementById('email-input').value;if(v&&v.includes('@'))submitEmail(v);else toast('enter a valid email',true)">send</button>
-        </div>
-        <button class="email-prompt-skip" onclick="skipEmail()">skip</button>
       </div>
     `;
   }
