@@ -1558,6 +1558,11 @@ function renderManage(status, data, history, tensions) {
   html += `
     <div class="settings-section">
       <div class="section-title">data</div>
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.8;margin-bottom:12px">
+        <strong style="color:var(--text-dim);font-weight:500">your data lives on this device only.</strong> Marcy doesn't use accounts or servers — everything is stored locally on your device. Your data will persist through normal use, but it <strong style="color:var(--text-dim);font-weight:500">will be deleted</strong> if you delete the app or reset your device.
+        <br><br>
+        Export a backup to save a copy of your data as a file. If your data is ever lost, use import to restore it.
+      </div>
       <div class="backup-row">
         <button class="backup-btn" onclick="exportData()">export backup</button>
         <button class="backup-btn" onclick="document.getElementById('import-file').click()">import backup</button>
