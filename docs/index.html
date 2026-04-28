@@ -1247,6 +1247,13 @@ function renderOnboarding() {
           <span style="font-size:12px;color:var(--text-muted)">days — leave blank for default (28)</span>
         </div>
       </div>
+      <div class="onboard-field">
+        <div class="onboard-label">email (optional)</div>
+        <div class="log-form">
+          <input type="email" class="log-input" id="onboard-email" placeholder="email@example.com">
+        </div>
+        <div class="onboard-note">for product updates only — no spam, no sharing</div>
+      </div>
       <div style="font-size:10px;color:var(--text-muted);line-height:1.8;margin-bottom:16px;margin-top:8px">
         By continuing, you agree that Marcy provides <strong style="color:var(--text-dim);font-weight:500">estimates only</strong>, based on general medical conventions. This is not a medical device. It should not be relied upon for contraception, fertility planning, or any medical decisions. See full <button class="terms-toggle" style="display:inline;font-size:10px;padding:0;text-decoration:underline" onclick="document.getElementById('onboard-terms').style.display=document.getElementById('onboard-terms').style.display==='none'?'block':'none'">disclaimer</button>.
         <div id="onboard-terms" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
@@ -1256,13 +1263,6 @@ function renderOnboarding() {
           <br><br>
           All data is stored locally on your device. Nothing is transmitted to any server. You are solely responsible for backing up your data.
         </div>
-      </div>
-      <div class="onboard-field">
-        <div class="onboard-label">email (optional)</div>
-        <div class="log-form">
-          <input type="email" class="log-input" id="onboard-email" placeholder="email@example.com">
-        </div>
-        <div class="onboard-note">for product updates only — no spam, no sharing</div>
       </div>
       <button class="onboard-btn" id="onboard-go">get started</button>
       <button class="onboard-skip" id="onboard-restore">restore from backup</button>
