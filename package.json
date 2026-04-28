@@ -1,0 +1,28 @@
+{
+  "name": "marcy",
+  "version": "1.0.0",
+  "description": "A simple, private cycle tracker that runs locally on your Mac. No accounts, no cloud — just your data on your machine.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alstsri/Marcy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alstsri/Marcy/issues"
+  },
+  "homepage": "https://github.com/alstsri/Marcy#readme",
+  "dependencies": {
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/ios": "^8.3.1"
+  }
+}
