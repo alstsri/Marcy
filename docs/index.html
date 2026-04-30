@@ -1185,6 +1185,8 @@ const todayContent = {
 let todayCardOpen = false;
 let termsOpen = false;
 let currentView = 'dashboard';
+let tensionHistoryOpen = false;
+let periodHistoryOpen = false;
 
 function getPhaseKey(status) {
   const day = status.cycle_day;
@@ -1222,6 +1224,8 @@ function todayButton(status) {
 
 function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
 function toggleTerms() { termsOpen = !termsOpen; render(); }
+function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
+function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function switchView(view) { currentView = view; window.scrollTo(0, 0); render(); }
 
 // ── Onboarding ──────────────────────────────────────────────────
@@ -1485,33 +1489,45 @@ function renderManage(status, data, history, tensions) {
 
   // Tension history
   if (tensions.length > 0) {
-    html += `<div class="history-section"><div class="section-title">tension log</div>`;
-    for (const f of [...tensions].reverse()) {
-      html += `
-        <div class="history-row">
-          <span class="history-date">${fmtDate(f)}</span>
-          <span class="history-len"></span>
-          <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
-        </div>
-      `;
+    html += `<div class="history-section">
+      <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleTensionHistory()">
+        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${tensionHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
+        tension log — ${tensions.length}
+      </button>`;
+    if (tensionHistoryOpen) {
+      for (const f of [...tensions].reverse()) {
+        html += `
+          <div class="history-row">
+            <span class="history-date">${fmtDate(f)}</span>
+            <span class="history-len"></span>
+            <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
+          </div>
+        `;
+      }
     }
     html += `</div>`;
   }
 
   // Period history
   if (history.entries.length > 0) {
-    html += `<div class="history-section"><div class="section-title">period history</div>`;
-    html += `<div class="stat-row">cycles: <span>${history.total_cycles}</span></div>`;
-    html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
-    for (const e of [...history.entries].reverse()) {
-      const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
-      html += `
-        <div class="history-row">
-          <span class="history-date">${fmtDate(e.date)}</span>
-          <span class="history-len">${lenStr}</span>
-          <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
-        </div>
-      `;
+    html += `<div class="history-section">
+      <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="togglePeriodHistory()">
+        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${periodHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
+        period history — ${history.entries.length}
+      </button>`;
+    if (periodHistoryOpen) {
+      html += `<div class="stat-row">cycles: <span>${history.total_cycles}</span></div>`;
+      html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
+      for (const e of [...history.entries].reverse()) {
+        const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
+        html += `
+          <div class="history-row">
+            <span class="history-date">${fmtDate(e.date)}</span>
+            <span class="history-len">${lenStr}</span>
+            <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
+          </div>
+        `;
+      }
     }
     html += `</div>`;
   }
