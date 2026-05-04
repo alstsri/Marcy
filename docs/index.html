@@ -803,6 +803,7 @@ const DEFAULT_DATA = {
   email_prompted: false,
   email: null,
   paused: false,
+  partner_name: null,
 };
 
 function loadData() {
@@ -817,6 +818,7 @@ function loadData() {
     if (d.email_prompted === undefined) d.email_prompted = false;
     if (d.email === undefined) d.email = null;
     if (d.paused === undefined) d.paused = false;
+    if (d.partner_name === undefined) d.partner_name = null;
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -1049,6 +1051,9 @@ function getHistory() {
 // ── UI Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 
+function pn() { const d = loadData(); return d.partner_name || 'she'; }
+function pnPoss() { const d = loadData(); return d.partner_name ? d.partner_name + "'s" : 'her'; }
+
 function toast(msg, isError) {
   const t = $('#toast');
   t.textContent = msg;
@@ -1102,11 +1107,11 @@ function getLateReassurance(daysLate, data) {
   } else if (daysLate <= 5) {
     msg = general[dayOfYear() % general.length];
   } else if (daysLate <= 10) {
-    msg = "this is outside typical variation — a doctor visit may be worth considering if she hasn't already";
+    msg = "this is outside typical variation — a doctor visit may be worth considering if " + pn() + " hasn't already";
   } else if (daysLate <= 14) {
     msg = "pregnancy is a real possibility — a home test can give clarity quickly";
   } else {
-    msg = "her cycle has paused — this is most commonly pregnancy, but could also be hormonal or medical. if she resumes cycling, you can reset tracking below";
+    msg = pnPoss() + " cycle has paused — this is most commonly pregnancy, but could also be hormonal or medical. if " + pn() + " resumes cycling, you can reset tracking below";
   }
   if (daysLate <= 10 && data.periods.length < 3) {
     msg += " — marcy is still learning her pattern, so the prediction may simply be off";
@@ -1264,7 +1269,7 @@ function todayButton(status) {
   </button>`;
   if (todayCardOpen) {
     html += `<div class="today-card">
-      <div class="today-section-label">where she is</div>
+      <div class="today-section-label">where ${pn()} is</div>
       <div class="today-text">${insight}</div>
       <div class="today-section-label">how to connect</div>
       <div class="today-text">${connect}</div>
@@ -1293,6 +1298,13 @@ function renderOnboarding() {
       <div class="onboard-title">know what's coming.</div>
       <div class="onboard-text">
         Marcy tracks her cycle so you can stay ahead of it — not react to it. Understand the patterns, make better decisions, and show up with intention. Marcy works best when she knows you're using it. All data stays on this device. Nothing is sent anywhere.
+      </div>
+      <div class="onboard-field">
+        <div class="onboard-label">her name (optional)</div>
+        <div class="log-form">
+          <input type="text" class="log-input" id="onboard-name" placeholder="e.g. Sarah" autocomplete="off">
+        </div>
+        <div class="onboard-note">personalizes the app — leave blank to use "she/her"</div>
       </div>
       <div class="onboard-field">
         <div class="onboard-label">when did her last period start?</div>
@@ -1349,6 +1361,8 @@ function bindOnboarding() {
         const n = parseInt(cycleVal);
         if (n >= 18 && n <= 45) data.settings.manual_cycle_length = n;
       }
+      const nameVal = document.getElementById('onboard-name').value.trim();
+      if (nameVal) data.partner_name = nameVal;
       const emailVal = document.getElementById('onboard-email').value.trim();
       if (emailVal && emailVal.includes('@')) {
         data.email = emailVal;
@@ -1415,13 +1429,13 @@ function renderDashboard(status, data) {
     html += `
       <div class="late-prompt">
         <div class="late-prompt-top">
-          <div class="late-prompt-text">did her period start? log it to reset predictions.</div>
+          <div class="late-prompt-text">did ${pnPoss()} period start? log it to reset predictions.</div>
           <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
         </div>
         ${data.periods.length < 3 ? '<div class="late-prompt-extra">predictions are still calibrating — this may not actually be late</div>' : ''}
         ${daysLateForPrompt >= 14 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
           <div class="late-prompt-top">
-            <div class="late-prompt-text">not expecting her period? pause tracking until her cycle resumes.</div>
+            <div class="late-prompt-text">not expecting ${pnPoss()} period? pause tracking until ${pnPoss()} cycle resumes.</div>
             <button class="late-prompt-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid var(--border)" onclick="pauseTracking()">pause</button>
           </div>
         </div>` : ''}
@@ -1434,7 +1448,7 @@ function renderDashboard(status, data) {
     html += `
       <div class="late-prompt">
         <div class="late-prompt-top">
-          <div class="late-prompt-text">tracking is paused. when her cycle resumes, log her next period to restart.</div>
+          <div class="late-prompt-text">tracking is paused. when ${pnPoss()} cycle resumes, log ${pnPoss()} next period to restart.</div>
           <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
         </div>
         <div class="late-prompt-extra" style="margin-top:8px">
@@ -1636,6 +1650,17 @@ function renderManage(status, data, history, tensions) {
     </div>
   `;
 
+  // Partner name in settings
+  html += `
+    <div class="settings-section">
+      <div class="section-title">her name</div>
+      <div class="settings-row" style="border-bottom:none">
+        <input type="text" class="log-input" id="settings-name" placeholder="leave blank for she/her" value="${data.partner_name || ''}" style="flex:1" autocomplete="off">
+        <button class="settings-save" id="settings-save-name" style="margin-left:8px">save</button>
+      </div>
+    </div>
+  `;
+
   // Email in settings
   html += `
     <div class="settings-section">
@@ -1827,6 +1852,19 @@ function bindSettings() {
       data.settings.manual_cycle_length = null;
       saveData(data);
       toast('using auto-calculation');
+      render();
+    });
+  }
+
+  // Name setting
+  const saveName = document.getElementById('settings-save-name');
+  if (saveName) {
+    saveName.addEventListener('click', () => {
+      const val = document.getElementById('settings-name').value.trim();
+      const data = loadData();
+      data.partner_name = val || null;
+      saveData(data);
+      toast(val ? `personalized for ${val}` : 'using she/her');
       render();
     });
   }
