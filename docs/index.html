@@ -1185,6 +1185,8 @@ const todayContent = {
 let todayCardOpen = false;
 let termsOpen = false;
 let currentView = 'dashboard';
+let tensionHistoryOpen = false;
+let periodHistoryOpen = false;
 
 function getPhaseKey(status) {
   const day = status.cycle_day;
@@ -1222,6 +1224,8 @@ function todayButton(status) {
 
 function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
 function toggleTerms() { termsOpen = !termsOpen; render(); }
+function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
+function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function switchView(view) { currentView = view; window.scrollTo(0, 0); render(); }
 
 // ── Onboarding ──────────────────────────────────────────────────
@@ -1229,9 +1233,9 @@ function renderOnboarding() {
   const today = isoDate(new Date());
   return `
     <div class="onboard">
-      <div class="onboard-title">understand her cycle.<br>show up better.</div>
+      <div class="onboard-title">know what's coming.</div>
       <div class="onboard-text">
-        Marcy tracks cycle phases and tells you what's going on — hormonally, emotionally — and how to be there for her. All data stays on this device. Nothing is sent anywhere.
+        Marcy tracks her cycle so you can stay ahead of it — not react to it. Understand the patterns, make better decisions, and show up with intention. All data stays on this device. Nothing is sent anywhere.
       </div>
       <div class="onboard-field">
         <div class="onboard-label">when did her last period start?</div>
@@ -1246,6 +1250,13 @@ function renderOnboarding() {
           <input type="number" class="log-input settings-input" id="onboard-cycle" placeholder="28" min="18" max="45" style="width:80px">
           <span style="font-size:12px;color:var(--text-muted)">days — leave blank for default (28)</span>
         </div>
+      </div>
+      <div class="onboard-field">
+        <div class="onboard-label">email (optional)</div>
+        <div class="log-form">
+          <input type="email" class="log-input" id="onboard-email" placeholder="email@example.com">
+        </div>
+        <div class="onboard-note">for product updates only — no spam, no sharing</div>
       </div>
       <div style="font-size:10px;color:var(--text-muted);line-height:1.8;margin-bottom:16px;margin-top:8px">
         By continuing, you agree that Marcy provides <strong style="color:var(--text-dim);font-weight:500">estimates only</strong>, based on general medical conventions. This is not a medical device. It should not be relied upon for contraception, fertility planning, or any medical decisions. See full <button class="terms-toggle" style="display:inline;font-size:10px;padding:0;text-decoration:underline" onclick="document.getElementById('onboard-terms').style.display=document.getElementById('onboard-terms').style.display==='none'?'block':'none'">disclaimer</button>.
@@ -1280,6 +1291,12 @@ function bindOnboarding() {
       if (cycleVal) {
         const n = parseInt(cycleVal);
         if (n >= 18 && n <= 45) data.settings.manual_cycle_length = n;
+      }
+      const emailVal = document.getElementById('onboard-email').value.trim();
+      if (emailVal && emailVal.includes('@')) {
+        data.email = emailVal;
+        data.email_prompted = true;
+        submitEmail(emailVal);
       }
       saveData(data);
       toast('welcome to marcy');
@@ -1355,20 +1372,6 @@ function renderDashboard(status, data) {
       <div class="tension-alert">
         <div class="phase-label">TENSION ALERT</div>
         <div class="phase-sub">${fa.days_until_hot_day === 0 ? 'peak tension day — tread lightly' : `peak tension in ${fa.days_until_hot_day}d — be extra thoughtful`}</div>
-      </div>
-    `;
-  }
-
-  // Email prompt (one-time)
-  if (data.onboarded && !data.email_prompted) {
-    html += `
-      <div class="email-prompt">
-        <div class="email-prompt-text">want updates as marcy grows? drop your email — no spam, no sharing.</div>
-        <div class="email-prompt-form">
-          <input type="email" class="log-input" id="email-input" placeholder="email@example.com">
-          <button class="log-btn" style="font-size:11px;padding:10px 14px" onclick="const v=document.getElementById('email-input').value;if(v&&v.includes('@'))submitEmail(v);else toast('enter a valid email',true)">send</button>
-        </div>
-        <button class="email-prompt-skip" onclick="skipEmail()">skip</button>
       </div>
     `;
   }
@@ -1486,33 +1489,45 @@ function renderManage(status, data, history, tensions) {
 
   // Tension history
   if (tensions.length > 0) {
-    html += `<div class="history-section"><div class="section-title">tension log</div>`;
-    for (const f of [...tensions].reverse()) {
-      html += `
-        <div class="history-row">
-          <span class="history-date">${fmtDate(f)}</span>
-          <span class="history-len"></span>
-          <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
-        </div>
-      `;
+    html += `<div class="history-section">
+      <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleTensionHistory()">
+        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${tensionHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
+        tension log — ${tensions.length}
+      </button>`;
+    if (tensionHistoryOpen) {
+      for (const f of [...tensions].reverse()) {
+        html += `
+          <div class="history-row">
+            <span class="history-date">${fmtDate(f)}</span>
+            <span class="history-len"></span>
+            <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
+          </div>
+        `;
+      }
     }
     html += `</div>`;
   }
 
   // Period history
   if (history.entries.length > 0) {
-    html += `<div class="history-section"><div class="section-title">period history</div>`;
-    html += `<div class="stat-row">cycles: <span>${history.total_cycles}</span></div>`;
-    html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
-    for (const e of [...history.entries].reverse()) {
-      const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
-      html += `
-        <div class="history-row">
-          <span class="history-date">${fmtDate(e.date)}</span>
-          <span class="history-len">${lenStr}</span>
-          <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
-        </div>
-      `;
+    html += `<div class="history-section">
+      <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="togglePeriodHistory()">
+        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${periodHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
+        period history — ${history.entries.length}
+      </button>`;
+    if (periodHistoryOpen) {
+      html += `<div class="stat-row">cycles: <span>${history.total_cycles}</span></div>`;
+      html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
+      for (const e of [...history.entries].reverse()) {
+        const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
+        html += `
+          <div class="history-row">
+            <span class="history-date">${fmtDate(e.date)}</span>
+            <span class="history-len">${lenStr}</span>
+            <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
+          </div>
+        `;
+      }
     }
     html += `</div>`;
   }
