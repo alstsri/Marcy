@@ -9,7 +9,11 @@
 <link rel="manifest" href="manifest.json">
 <title>marcy</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 300; src: url('fonts/jbm-300.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url('fonts/jbm-400.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: url('fonts/jbm-500.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 600; src: url('fonts/jbm-600.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 700; src: url('fonts/jbm-700.ttf') format('truetype'); font-display: swap; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -984,7 +988,7 @@ function getTensionAnalysis(data) {
     if (count > maxCount) { maxCount = count; hottestDay = Number(day); }
   }
   const avg = Math.round(daysBeforePeriod.reduce((a, b) => a + b, 0) / daysBeforePeriod.length * 10) / 10;
-  return { total_fights: tensions.length, mapped_fights: daysBeforePeriod.length, avg_days_before: avg, hottest_day_before: hottestDay, frequency: freq };
+  return { total_tensions: tensions.length, mapped_tensions: daysBeforePeriod.length, avg_days_before: avg, hottest_day_before: hottestDay, frequency: freq };
 }
 
 function getStatus() {
@@ -1176,7 +1180,7 @@ const todayContent = {
       "<strong>Be direct and present.</strong> Her communication is sharp right now — say what you mean, listen actively. Good conversations happen easiest in this window.",
       "If you've been meaning to do something together — <strong>now is the time.</strong> Her energy and enthusiasm are at their peak. Don't waste this window being passive.",
       "She's radiating right now and she knows it. <strong>Don't be jealous if she gets attention</strong> — be the one giving it. Confidence is attractive, and right now she has plenty. Match it.",
-      "<strong>Be aware: this is peak fertility.</strong> If you're avoiding pregnancy, this is the window that matters most. Don't be careless — biology is working hard to make conception happen.",
+      "<strong>Be aware: this is peak fertility.</strong> Her body is biologically primed for conception right now. Whatever your plans are around pregnancy, this is the window to be most intentional about them.",
       "Her desire for connection — emotional and physical — <strong>is at its highest.</strong> Show up fully. Half-presence gets noticed more right now because she's so dialed in.",
       "<strong>Don't coast.</strong> It's easy to be lazy when she's in a good mood — but this is actually the best time to invest in the relationship. The effort you put in now gets remembered during the harder phases.",
     ],
@@ -1198,7 +1202,7 @@ const todayContent = {
       "Comfort starts to matter more. <strong>Cozy over exciting.</strong> A night in beats a night out. Check in on how she's feeling without overdoing it — one genuine ask is better than five anxious ones.",
       "<strong>Be steady.</strong> She may be a bit more reactive or sensitive. The best thing you can do is not escalate — stay calm, don't match frustration with frustration.",
       "This is the phase where <strong>small thoughtful things go the furthest.</strong> Her favorite snack, taking something off her plate, not making her decide what's for dinner. Low effort for you, high impact for her.",
-      "If she picks a fight over something small, <strong>resist the urge to engage on the content.</strong> The issue usually isn't what she's saying it is — it's that her emotional buffer is thin. De-escalate, don't debate.",
+      "If tension comes up over something small, <strong>resist the urge to debate the details.</strong> Her emotional buffer is thinner right now — what feels like a big deal may not feel that way in a few days. De-escalate, don't engage.",
       "<strong>Don't take withdrawal personally.</strong> If she's less affectionate, less talkative, or less interested in plans — it's the phase, not the relationship. Give her room without creating distance.",
       "Her inner critic gets louder during the luteal phase. <strong>She may be harder on herself than usual.</strong> If she seems down on her appearance, work, or decisions — a quiet, genuine reassurance lands well.",
       "<strong>This is prep week.</strong> You know PMS is coming. Stock the kitchen with her comfort foods, clear your schedule of stressful plans, and reduce the number of decisions you'll need from her.",
@@ -1274,6 +1278,11 @@ function toggleTerms() { termsOpen = !termsOpen; render(); }
 function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function pauseTracking() { const data = loadData(); data.paused = true; saveData(data); toast('tracking paused'); render(); }
+function shareMarcy() {
+  const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle so you can stay ahead of it. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
+  if (navigator.share) { navigator.share(shareData).catch(() => {}); }
+  else { navigator.clipboard.writeText(shareData.url).then(() => toast('link copied')).catch(() => toast('could not copy', true)); }
+}
 function switchView(view) { currentView = view; window.scrollTo(0, 0); render(); }
 
 // ── Onboarding ──────────────────────────────────────────────────
@@ -1283,7 +1292,7 @@ function renderOnboarding() {
     <div class="onboard">
       <div class="onboard-title">know what's coming.</div>
       <div class="onboard-text">
-        Marcy tracks her cycle so you can stay ahead of it — not react to it. Understand the patterns, make better decisions, and show up with intention. All data stays on this device. Nothing is sent anywhere.
+        Marcy tracks her cycle so you can stay ahead of it — not react to it. Understand the patterns, make better decisions, and show up with intention. Marcy works best when she knows you're using it. All data stays on this device. Nothing is sent anywhere.
       </div>
       <div class="onboard-field">
         <div class="onboard-label">when did her last period start?</div>
@@ -1542,11 +1551,11 @@ function renderManage(status, data, history, tensions) {
   `;
 
   // Tension heatmap
-  if (status.tension_analysis && status.tension_analysis.mapped_fights > 0) {
+  if (status.tension_analysis && status.tension_analysis.mapped_tensions > 0) {
     const freq = status.tension_analysis.frequency;
     const maxFreq = Math.max(...Object.values(freq));
     html += `<div class="timeline" style="margin-bottom:32px"><div class="timeline-title">tension pattern</div>`;
-    html += `<div class="stat-row">logged: <span>${status.tension_analysis.total_fights} event${status.tension_analysis.total_fights !== 1 ? 's' : ''}</span></div>`;
+    html += `<div class="stat-row">logged: <span>${status.tension_analysis.total_tensions} event${status.tension_analysis.total_tensions !== 1 ? 's' : ''}</span></div>`;
     html += `<div class="stat-row" style="margin-bottom:8px">avg: <span>${status.tension_analysis.avg_days_before}d before period</span></div>`;
     html += `<div class="heatmap">`;
     for (let d = 7; d >= 1; d--) {
@@ -1639,6 +1648,14 @@ function renderManage(status, data, history, tensions) {
         }
       </div>
       <div style="font-size:10px;color:var(--text-muted);padding-top:4px">for product updates only — sent to Formspree</div>
+    </div>
+  `;
+
+  // Share
+  html += `
+    <div class="settings-section">
+      <div class="section-title">share marcy</div>
+      <button class="backup-btn" style="width:100%" onclick="shareMarcy()">share with someone</button>
     </div>
   `;
 
@@ -1862,6 +1879,61 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
 
+// ── Local Notifications ─────────────────────────────────────────
+async function scheduleNotifications() {
+  if (!window.Capacitor || !window.Capacitor.Plugins.LocalNotifications) return;
+  const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+
+  const perm = await LocalNotifications.requestPermissions();
+  if (perm.display !== 'granted') return;
+
+  // Cancel existing scheduled notifications
+  const pending = await LocalNotifications.getPending();
+  if (pending.notifications.length > 0) {
+    await LocalNotifications.cancel(pending);
+  }
+
+  const data = loadData();
+  if (data.paused || data.periods.length === 0) return;
+
+  const preds = getPredictions(data);
+  if (!preds) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const notifications = [];
+  let id = 1;
+
+  function scheduleAt(date, title, body) {
+    const d = new Date(date);
+    d.setHours(9, 0, 0, 0); // 9 AM
+    if (d > today) {
+      notifications.push({ id: id++, title, body, schedule: { at: d }, sound: 'default' });
+    }
+  }
+
+  // Fertile window start
+  scheduleAt(preds.fertileStart, 'Fertile window begins', 'High conception risk starts today. Be intentional.');
+
+  // Fertile window end
+  scheduleAt(addDays(preds.fertileEnd, 1), 'Fertile window ended', 'Fertile window has passed. Ovulation is behind you.');
+
+  // PMS start
+  scheduleAt(preds.pmsStart, 'PMS window begins', 'Patience and small gestures go a long way this week.');
+
+  // Peak tension (if data exists)
+  const tensionData = getTensionAnalysis(data);
+  if (tensionData) {
+    const hotDate = addDays(preds.nextPeriod, -tensionData.hottest_day_before);
+    scheduleAt(hotDate, 'Peak tension day', 'Based on past patterns, today may be tense. Tread lightly.');
+  }
+
+  if (notifications.length > 0) {
+    await LocalNotifications.schedule({ notifications });
+  }
+}
+
+scheduleNotifications();
 render();
 </script>
 </body>
