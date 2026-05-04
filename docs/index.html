@@ -798,6 +798,7 @@ const DEFAULT_DATA = {
   onboarded: false,
   email_prompted: false,
   email: null,
+  paused: false,
 };
 
 function loadData() {
@@ -811,6 +812,7 @@ function loadData() {
     if (d.onboarded === undefined) d.onboarded = false;
     if (d.email_prompted === undefined) d.email_prompted = false;
     if (d.email === undefined) d.email = null;
+    if (d.paused === undefined) d.paused = false;
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -1003,7 +1005,8 @@ function getStatus() {
     const daysLate = daysBetween(preds.nextPeriod, today);
     phase = 'late';
     if (daysLate <= 2) phaseLabel = 'PERIOD EXPECTED';
-    else phaseLabel = `PERIOD ${daysLate}D LATE`;
+    else if (daysLate <= 14) phaseLabel = `PERIOD ${daysLate}D LATE`;
+    else phaseLabel = `CYCLE PAUSED — ${daysLate}D`;
   }
   const daysToFertile = daysBetween(today, preds.fertileStart);
   const daysToPms = daysBetween(today, preds.pmsStart);
@@ -1094,10 +1097,14 @@ function getLateReassurance(daysLate, data) {
     msg = "should arrive any time now — " + general[dayOfYear() % general.length];
   } else if (daysLate <= 5) {
     msg = general[dayOfYear() % general.length];
+  } else if (daysLate <= 10) {
+    msg = "this is outside typical variation — a doctor visit may be worth considering if she hasn't already";
+  } else if (daysLate <= 14) {
+    msg = "pregnancy is a real possibility — a home test can give clarity quickly";
   } else {
-    msg = general[dayOfYear() % general.length] + ". if this continues much longer, she may want to check in with a doctor";
+    msg = "her cycle has paused — this is most commonly pregnancy, but could also be hormonal or medical. if she resumes cycling, you can reset tracking below";
   }
-  if (data.periods.length < 3) {
+  if (daysLate <= 10 && data.periods.length < 3) {
     msg += " — marcy is still learning her pattern, so the prediction may simply be off";
   }
   return msg;
@@ -1226,6 +1233,7 @@ function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
 function toggleTerms() { termsOpen = !termsOpen; render(); }
 function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
+function pauseTracking() { const data = loadData(); data.paused = true; saveData(data); toast('tracking paused'); render(); }
 function switchView(view) { currentView = view; window.scrollTo(0, 0); render(); }
 
 // ── Onboarding ──────────────────────────────────────────────────
@@ -1338,8 +1346,8 @@ function renderDashboard(status, data) {
   let html = '';
   const daysLate = status.phase === 'late' ? status.cycle_day - status.cycle_length : 0;
 
-  // Phase banner
-  if (status.phase_label) {
+  // Phase banner (suppress when paused)
+  if (status.phase_label && !data.paused) {
     let subMsg = '';
     if (status.phase === 'fertile') subMsg = 'high conception risk — be careful';
     else if (status.phase === 'pms') subMsg = 'extra patience goes a long way';
@@ -1353,7 +1361,8 @@ function renderDashboard(status, data) {
   }
 
   // Late period prompt
-  if (status.phase === 'late') {
+  if (status.phase === 'late' && !data.paused) {
+    const daysLateForPrompt = status.cycle_day - status.cycle_length;
     html += `
       <div class="late-prompt">
         <div class="late-prompt-top">
@@ -1361,6 +1370,27 @@ function renderDashboard(status, data) {
           <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
         </div>
         ${data.periods.length < 3 ? '<div class="late-prompt-extra">predictions are still calibrating — this may not actually be late</div>' : ''}
+        ${daysLateForPrompt >= 14 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div class="late-prompt-top">
+            <div class="late-prompt-text">not expecting her period? pause tracking until her cycle resumes.</div>
+            <button class="late-prompt-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid var(--border)" onclick="pauseTracking()">pause</button>
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  // Paused state
+  if (data.paused) {
+    html += `
+      <div class="late-prompt">
+        <div class="late-prompt-top">
+          <div class="late-prompt-text">tracking is paused. when her cycle resumes, log her next period to restart.</div>
+          <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
+        </div>
+        <div class="late-prompt-extra" style="margin-top:8px">
+          her previous cycle length (${status.cycle_length}d) will be used as a starting point. new cycles will refine predictions from there.
+        </div>
       </div>
     `;
   }
@@ -1405,6 +1435,9 @@ function renderDashboard(status, data) {
       </div>
     </div>
   `;
+
+  // Skip predictions content when paused
+  if (data.paused) return html;
 
   // Early tracking note
   const earlyNote = getEarlyTrackingNote(data);
@@ -1667,11 +1700,15 @@ function bindForms() {
       const data = loadData();
       if (data.periods.includes(val)) { toast(`${val} already logged`, true); return; }
       const prevCount = data.periods.length;
+      const wasPaused = data.paused;
       data.periods.push(val);
       data.periods.sort();
+      data.paused = false;
       saveData(data);
       // First real cycle acknowledgment
-      if (prevCount === 1) {
+      if (wasPaused) {
+        toast('tracking resumed');
+      } else if (prevCount === 1) {
         const cycleLen = getCycleLength(data);
         toast(`first cycle: ${cycleLen} days — marcy is learning`);
       } else {
