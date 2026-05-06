@@ -1159,9 +1159,9 @@ const todayContent = {
     connect: [
       "<strong>Good time to plan things together</strong> — dates, trips, conversations about the future. She has the bandwidth for it now and will probably enjoy it.",
       "Match her energy. <strong>She's likely feeling upbeat and open</strong> — this is a great window for quality time, deeper conversations, or trying something new together.",
-      "<strong>Bring up the stuff you've been sitting on.</strong> Need to talk through something? Want to plan something? Her patience and receptivity are high right now — use the window.",
+      "<strong>Bring up the stuff you've been sitting on.</strong> Need to talk through something? Want to plan something? Conversations tend to go better for both of you during this phase.",
       "She might be more playful and flirty. <strong>Lean into that energy.</strong> Compliment her, be spontaneous, suggest something fun. This phase rewards engagement.",
-      "This is the best time to <strong>have hard conversations if you need to.</strong> She's got the emotional bandwidth and cognitive clarity to engage productively. Don't waste this window on small talk if something real needs discussing.",
+      "If something real needs discussing, <strong>this is a good phase for it.</strong> She's more likely to have the bandwidth to engage productively, and you're more likely to get a real conversation instead of a reactive one.",
       "<strong>Try something new together.</strong> Her openness to novelty is highest right now — new restaurant, new activity, new place. She's more likely to say yes and actually enjoy it.",
       "She's probably more socially energized. <strong>Don't take it personally if she wants to see friends</strong> or make plans that don't include you. Her social battery is full — let her use it.",
       "<strong>Show initiative.</strong> Plan a date, suggest an outing, make a reservation. Her energy is up and she'll match yours — but someone has to go first. Be that person this week.",
@@ -1174,7 +1174,7 @@ const todayContent = {
       "Her body is at peak fertility. <strong>She may feel more attractive and outgoing.</strong> Communication skills and mood are typically at their best right now.",
       "Hormones are peaking — this is the top of the wave. <strong>She might feel magnetic, talkative, and high-energy.</strong> Libido is often highest during this window too.",
       "This is the phase where everything is firing. <strong>Mood, confidence, social energy — all up.</strong> She may want to go out, see people, or be more spontaneous than usual.",
-      "Her voice actually changes slightly around ovulation — <strong>studies show it becomes more attractive.</strong> Subtle biological signals are at work. She may carry herself differently without knowing why.",
+      "Her body is running at its biological peak right now. <strong>Energy, mood, and confidence are all elevated.</strong> She may carry herself differently — more open, more expressive, more present.",
       "Testosterone peaks briefly at ovulation. <strong>She may be more assertive, competitive, or decisive</strong> than usual. If she seems bolder or more direct, that's chemistry, and it's temporary.",
       "Pain tolerance is highest around ovulation. <strong>She's physically at her most resilient.</strong> This is the window where she's most likely to push herself — workouts, big days, challenging plans.",
       "Her senses are actually sharper right now — <strong>smell, taste, and attraction cues are heightened.</strong> She might notice things she normally doesn't. Her awareness is dialed up across the board.",
@@ -1183,8 +1183,8 @@ const todayContent = {
       "<strong>Match her social energy.</strong> She's probably feeling good — be present, be fun, be engaged. This is a great time for a real date or something out of the ordinary.",
       "She's feeling confident and connected. <strong>Show her you notice.</strong> Compliments feel especially good right now. Be genuinely engaged — she'll pick up on it.",
       "<strong>Be direct and present.</strong> Her communication is sharp right now — say what you mean, listen actively. Good conversations happen easiest in this window.",
-      "If you've been meaning to do something together — <strong>now is the time.</strong> Her energy and enthusiasm are at their peak. Don't waste this window being passive.",
-      "She's radiating right now and she knows it. <strong>Don't be jealous if she gets attention</strong> — be the one giving it. Confidence is attractive, and right now she has plenty. Match it.",
+      "If you've been meaning to do something together — <strong>now is a great time.</strong> Her energy and enthusiasm are high. Match that by showing up with a plan, not just going along.",
+      "She's feeling good and it shows. <strong>Be present and engaged.</strong> Compliments and attention land especially well right now. Confidence is attractive — match hers.",
       "<strong>Be aware: this is peak fertility.</strong> Her body is biologically primed for conception right now. Whatever your plans are around pregnancy, this is the window to be most intentional about them.",
       "Her desire for connection — emotional and physical — <strong>is at its highest.</strong> Show up fully. Half-presence gets noticed more right now because she's so dialed in.",
       "<strong>Don't coast.</strong> It's easy to be lazy when she's in a good mood — but this is actually the best time to invest in the relationship. The effort you put in now gets remembered during the harder phases.",
@@ -1284,7 +1284,7 @@ function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; rend
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function pauseTracking() { const data = loadData(); data.paused = true; saveData(data); toast('tracking paused'); render(); }
 function shareMarcy() {
-  const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle so you can stay ahead of it. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
+  const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle — what\'s happening, what to expect, and how to show up. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
   if (navigator.share) { navigator.share(shareData).catch(() => {}); }
   else { navigator.clipboard.writeText(shareData.url).then(() => toast('link copied')).catch(() => toast('could not copy', true)); }
 }
@@ -1297,7 +1297,7 @@ function renderOnboarding() {
     <div class="onboard">
       <div class="onboard-title">know what's coming.</div>
       <div class="onboard-text">
-        Marcy tracks her cycle so you can stay ahead of it — not react to it. Understand the patterns, make better decisions, and show up with intention. Marcy works best when she knows you're using it. All data stays on this device. Nothing is sent anywhere.
+        Marcy tracks her cycle so you can understand what's happening — not guess. Learn the patterns, make better decisions, and show up with intention. Tell her you're using it — Marcy is designed to be used openly. All data stays on this device. Nothing is sent anywhere.
       </div>
       <div class="onboard-field">
         <div class="onboard-label">her name (optional)</div>
