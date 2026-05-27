@@ -1249,13 +1249,15 @@ let periodHistoryOpen = false;
 function getPhaseKey(status) {
   const day = status.cycle_day;
   const data = loadData();
-  // Check if still menstruating: no end date logged for current period, and within reasonable range (≤10 days)
   const lastPeriod = status.last_period;
   const periodEnded = data.period_ends && data.period_ends[lastPeriod];
-  if (!periodEnded && day <= 10) return 'menstrual';
   if (periodEnded) {
+    // Actual end date logged — use it
     const endDay = daysBetween(parseDate(lastPeriod), parseDate(periodEnded)) + 1;
     if (day <= endDay) return 'menstrual';
+  } else {
+    // No end date logged — assume 5 days (medical default)
+    if (day <= 5) return 'menstrual';
   }
   if (status.phase === 'fertile') return 'ovulation';
   if (status.phase === 'pms') return 'pms';
