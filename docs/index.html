@@ -1252,8 +1252,8 @@ function getPhaseKey(status) {
   const lastPeriod = status.last_period;
   const periodEnded = data.period_ends && data.period_ends[lastPeriod];
   if (periodEnded) {
-    // Actual end date logged — use it
-    const endDay = daysBetween(parseDate(lastPeriod), parseDate(periodEnded)) + 1;
+    // Actual end date logged — period ended that day, next day is follicular
+    const endDay = daysBetween(parseDate(lastPeriod), parseDate(periodEnded));
     if (day <= endDay) return 'menstrual';
   } else {
     // No end date logged — assume 5 days (medical default)
