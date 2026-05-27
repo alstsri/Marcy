@@ -804,6 +804,7 @@ const DEFAULT_DATA = {
   email: null,
   paused: false,
   partner_name: null,
+  period_ends: {},
 };
 
 function loadData() {
@@ -819,6 +820,7 @@ function loadData() {
     if (d.email === undefined) d.email = null;
     if (d.paused === undefined) d.paused = false;
     if (d.partner_name === undefined) d.partner_name = null;
+    if (d.period_ends === undefined) d.period_ends = {};
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -1246,7 +1248,15 @@ let periodHistoryOpen = false;
 
 function getPhaseKey(status) {
   const day = status.cycle_day;
-  if (day <= 5) return 'menstrual';
+  const data = loadData();
+  // Check if still menstruating: no end date logged for current period, and within reasonable range (≤10 days)
+  const lastPeriod = status.last_period;
+  const periodEnded = data.period_ends && data.period_ends[lastPeriod];
+  if (!periodEnded && day <= 10) return 'menstrual';
+  if (periodEnded) {
+    const endDay = daysBetween(parseDate(lastPeriod), parseDate(periodEnded)) + 1;
+    if (day <= endDay) return 'menstrual';
+  }
   if (status.phase === 'fertile') return 'ovulation';
   if (status.phase === 'pms') return 'pms';
   if (status.days_to_pms <= 0 && status.days_to_period > 0) return 'pms';
@@ -1283,6 +1293,17 @@ function toggleTerms() { termsOpen = !termsOpen; render(); }
 function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function pauseTracking() { const data = loadData(); data.paused = true; saveData(data); toast('tracking paused'); render(); }
+function logPeriodEnd() {
+  const data = loadData();
+  const periods = [...data.periods].sort();
+  const lastPeriod = periods[periods.length - 1];
+  const today = isoDate(new Date());
+  data.period_ends[lastPeriod] = today;
+  saveData(data);
+  const duration = daysBetween(parseDate(lastPeriod), parseDate(today)) + 1;
+  toast(`period logged: ${duration} days`);
+  render();
+}
 function shareMarcy() {
   const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle — what\'s happening, what to expect, and how to show up. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
   if (navigator.share) { navigator.share(shareData).catch(() => {}); }
@@ -1492,12 +1513,23 @@ function renderDashboard(status, data) {
         </div>
       </div>
       <div class="ring-meta">
-        last period<br><span>${fmtDate(status.last_period)}</span><br>
+        last period<br><span>${fmtDate(status.last_period)}${currentPeriodEnded ? ' (' + (daysBetween(parseDate(status.last_period), parseDate(currentPeriodEnded)) + 1) + 'd)' : ''}</span><br>
         cycle length<br><span>${status.cycle_length}d ${cycleLenLabel}</span><br>
         tracked<br><span>${status.total_periods} period${status.total_periods !== 1 ? 's' : ''}</span>
       </div>
     </div>
   `;
+
+  // Period ended button (during menstrual phase, if no end date logged yet)
+  const phaseKey = getPhaseKey(status);
+  const currentPeriodEnded = data.period_ends && data.period_ends[status.last_period];
+  if (phaseKey === 'menstrual' && !currentPeriodEnded && status.cycle_day > 1) {
+    html += `
+      <button class="late-prompt-btn" style="width:100%;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);margin-bottom:32px;padding:12px" onclick="logPeriodEnd()">
+        ${pnPoss()} period has ended
+      </button>
+    `;
+  }
 
   // Skip predictions content when paused
   if (data.paused) return html;
@@ -1616,9 +1648,10 @@ function renderManage(status, data, history, tensions) {
       html += `<div class="stat-row" style="margin-bottom:12px">avg length: <span>${history.average}d</span></div>`;
       for (const e of [...history.entries].reverse()) {
         const lenStr = e.cycle_length ? `${e.cycle_length}d` : '—';
+        const periodDur = data.period_ends[e.date] ? (daysBetween(parseDate(e.date), parseDate(data.period_ends[e.date])) + 1) + 'd period' : '';
         html += `
           <div class="history-row">
-            <span class="history-date">${fmtDate(e.date)}</span>
+            <span class="history-date">${fmtDate(e.date)}${periodDur ? ` <span style="color:var(--text-muted)">(${periodDur})</span>` : ''}</span>
             <span class="history-len">${lenStr}</span>
             <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
           </div>
