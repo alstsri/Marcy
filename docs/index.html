@@ -1492,6 +1492,10 @@ function renderDashboard(status, data) {
     `;
   }
 
+  // Phase and period end state (needed by ring meta and period-ended button)
+  const phaseKey = getPhaseKey(status);
+  const currentPeriodEnded = data.period_ends && data.period_ends[status.last_period];
+
   // Ring + meta
   const pct = status.phase === 'late' ? 1 : Math.min(status.cycle_day / status.cycle_length, 1);
   const circumference = 2 * Math.PI * 52;
@@ -1523,8 +1527,6 @@ function renderDashboard(status, data) {
   `;
 
   // Period ended button (during menstrual phase, if no end date logged yet)
-  const phaseKey = getPhaseKey(status);
-  const currentPeriodEnded = data.period_ends && data.period_ends[status.last_period];
   if (phaseKey === 'menstrual' && !currentPeriodEnded && status.cycle_day > 1) {
     html += `
       <button class="late-prompt-btn" style="width:100%;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);margin-bottom:32px;padding:12px" onclick="logPeriodEnd()">
