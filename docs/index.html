@@ -1794,12 +1794,17 @@ function render() {
     return;
   }
 
-  if (currentView === 'dashboard') {
-    $('#content').innerHTML = renderDashboard(status, data);
-  } else {
-    $('#content').innerHTML = renderManage(status, data, history, tensions);
-    bindForms();
-    bindSettings();
+  try {
+    if (currentView === 'dashboard') {
+      $('#content').innerHTML = renderDashboard(status, data);
+    } else {
+      $('#content').innerHTML = renderManage(status, data, history, tensions);
+      bindForms();
+      bindSettings();
+    }
+  } catch (e) {
+    $('#content').innerHTML = `<div class="empty">something went wrong.<br>${e.message}</div>`;
+    console.error('Render error:', e);
   }
 }
 
