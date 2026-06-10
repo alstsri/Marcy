@@ -1561,7 +1561,14 @@ function renderDashboard(status, data) {
 
   html += `<div class="timeline"><div class="timeline-title">upcoming</div>`;
   for (const ev of events) {
-    const cd = countdown(ev.days);
+    let cd;
+    if (ev.end && ev.days < 0) {
+      // Range event (like fertile window) — check if we're still inside it
+      const daysToEnd = daysBetween(new Date(new Date().setHours(0,0,0,0)), parseDate(ev.end));
+      cd = daysToEnd >= 0 ? { text: 'now', cls: 'active' } : { text: 'past', cls: '' };
+    } else {
+      cd = countdown(ev.days);
+    }
     const dateStr = ev.end ? `${fmtDate(ev.date)} – ${fmtDate(ev.end)}` : fmtDate(ev.date);
     html += `
       <div class="timeline-row">
