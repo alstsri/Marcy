@@ -53,9 +53,15 @@ Launch release. Cycle tracking with phase-aware daily insights, tension pattern 
 
 ---
 
+## Privacy Policy URL
+https://alstsri.github.io/Marcy/privacy.html
+
+## Support URL
+https://alstsri.github.io/Marcy/support.html
+
 ## Privacy Policy
 
-Host this at a public URL (e.g., a GitHub Pages page or simple site).
+Hosted at the URL above via GitHub Pages.
 
 ### Privacy Policy for Marcy
 
@@ -85,7 +91,7 @@ The only third-party service used is Formspree (formspree.io) for optional email
 We may update this privacy policy from time to time. Changes will be reflected in the "Last updated" date above.
 
 #### Contact
-For questions about this privacy policy, contact: [YOUR EMAIL ADDRESS]
+For questions about this privacy policy, contact: themarcyapp@gmail.com
 
 ---
 
