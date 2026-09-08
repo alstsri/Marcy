@@ -97,13 +97,10 @@ For questions about this privacy policy, contact: themarcyapp@gmail.com
 
 ## Screenshots
 
-Capture these from the iPhone 16 Pro Max simulator (6.7") and iPhone 16 Pro simulator (6.1"):
+Native screenshot candidates and the recommended upload order are in [`screenshots/app-store-candidates/`](screenshots/app-store-candidates/README.md).
 
-1. **Onboarding** — "know what's coming." landing screen
-2. **Dashboard — Ring** — Cycle day ring with phase banner visible
-3. **Dashboard — Today's Read** — Expanded today's read card showing "where she is" and "how to connect"
-4. **Dashboard — Timeline** — Upcoming events with countdowns
-5. **Data — Log & History** — Log forms and period history
-6. **Data — Tension Pattern** — Heatmap visualization
-
-To capture: In the simulator, press Cmd+S to save a screenshot to your Desktop.
+- 6.9-inch iPhone: 1320 × 2868 px
+- 6.3-inch iPhone: 1206 × 2622 px
+- 15 candidates are available per size; App Store Connect accepts up to 10 per device class.
+- Only one highest-resolution iPhone set is required under the current screenshot rules. The second iPhone set is optional.
+- The current Xcode target also supports iPad, so a 13-inch iPad set is required unless iPad support is removed before submission.
