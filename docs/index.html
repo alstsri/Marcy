@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
@@ -41,11 +41,34 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  body::before {
+    content: '';
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background: var(--bg);
+    pointer-events: none;
+  }
+
   .app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 24px 20px 72px;
+    padding: max(24px, calc(env(safe-area-inset-top) + 16px)) 20px max(72px, calc(env(safe-area-inset-bottom) + 72px));
     min-height: 100vh;
+  }
+
+  @media (min-width: 768px) {
+    body.native-app .app,
+    body.native-app .bottom-nav {
+      max-width: 720px;
+    }
+
+    body.native-app .app {
+      padding-top: max(40px, calc(env(safe-area-inset-top) + 16px));
+    }
   }
 
   /* Header */
@@ -1987,6 +2010,8 @@ function confirmDelTension(dateStr) {
     render();
   });
 }
+
+if (window.Capacitor) document.body.classList.add('native-app');
 
 // PWA
 if ('serviceWorker' in navigator) {
