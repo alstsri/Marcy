@@ -1,0 +1,13 @@
+{
+  "appId": "com.marcy.app",
+  "appName": "Marcy",
+  "webDir": "docs",
+  "packageClassList": [
+    "LocalNotificationsPlugin"
+  ],
+  "server": {
+    "url": "http://127.0.0.1:5099",
+    "appStartPath": "index.html",
+    "cleartext": true
+  }
+}
