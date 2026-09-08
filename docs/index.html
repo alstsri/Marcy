@@ -515,6 +515,11 @@
     background: var(--red);
     color: var(--bg);
   }
+  .confirm-ok {
+    background: var(--surface2);
+    border: 1px solid var(--text-dim);
+    color: var(--text);
+  }
 
   /* Late period prompt */
   .late-prompt {
@@ -869,7 +874,7 @@ function importData(file) {
 }
 
 // ── Confirm Dialog ──────────────────────────────────────────────
-function showConfirm(msg, onConfirm) {
+function showConfirm(msg, onConfirm, confirmLabel = 'delete', confirmClass = 'confirm-delete') {
   const root = document.getElementById('confirm-root');
   root.innerHTML = `
     <div class="confirm-overlay" onclick="if(event.target===this)dismissConfirm()">
@@ -877,7 +882,7 @@ function showConfirm(msg, onConfirm) {
         <div class="confirm-msg">${msg}</div>
         <div class="confirm-actions">
           <button class="confirm-cancel" onclick="dismissConfirm()">cancel</button>
-          <button class="confirm-delete" id="confirm-yes">delete</button>
+          <button class="${confirmClass}" id="confirm-yes">${confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -920,8 +925,7 @@ function dayOfYear() {
   return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
 }
 
-function getCycleLength(data) {
-  if (data.settings.manual_cycle_length) return data.settings.manual_cycle_length;
+function getAutoCycleLength(data) {
   const periods = [...data.periods].sort();
   if (periods.length < 2) return data.settings.default_cycle_length;
   const diffs = [];
@@ -938,6 +942,11 @@ function getCycleLength(data) {
     totalWeight += weight;
   }
   return Math.round(weightedSum / totalWeight);
+}
+
+function getCycleLength(data) {
+  if (data.settings.manual_cycle_length) return data.settings.manual_cycle_length;
+  return getAutoCycleLength(data);
 }
 
 function getCycleLengthType(data) {
@@ -1882,15 +1891,33 @@ function bindSettings() {
       const input = document.getElementById('settings-cycle');
       const val = input.value.trim();
       const data = loadData();
-      if (!val) { data.settings.manual_cycle_length = null; }
-      else {
-        const n = parseInt(val);
-        if (n < 18 || n > 45) { toast('cycle length must be 18-45 days', true); return; }
-        data.settings.manual_cycle_length = n;
+      if (!val) {
+        data.settings.manual_cycle_length = null;
+        saveData(data);
+        toast('using auto-calculation');
+        render();
+        return;
       }
-      saveData(data);
-      toast(val ? `cycle length set to ${val}d` : 'using auto-calculation');
-      render();
+      const n = parseInt(val);
+      if (n < 18 || n > 45) { toast('cycle length must be 18-45 days', true); return; }
+      const auto = getAutoCycleLength(data);
+      const diffPct = Math.abs(n - auto) / auto;
+      const apply = () => {
+        data.settings.manual_cycle_length = n;
+        saveData(data);
+        toast(`cycle length set to ${n}d`);
+        render();
+      };
+      if (diffPct > 0.2) {
+        showConfirm(
+          `You entered ${n}d, but her tracked average is ${auto}d — a ${Math.round(diffPct * 100)}% difference.<br><span style="font-size:11px;color:var(--text-dim)">This will override predictions until cleared.</span>`,
+          apply,
+          'use anyway',
+          'confirm-ok'
+        );
+      } else {
+        apply();
+      }
     });
   }
 
