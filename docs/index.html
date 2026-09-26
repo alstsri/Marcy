@@ -181,13 +181,14 @@
   .timeline {
     margin-bottom: 40px;
   }
-  .timeline-title {
+  .timeline-title, .timeline-note {
     font-size: 10px;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--text-muted);
     margin-bottom: 16px;
   }
+  .timeline-note { margin: 16px 0 0; line-height: 1.8; }
   .timeline-row {
     display: flex;
     justify-content: space-between;
@@ -1692,7 +1693,7 @@ function renderDashboard(status, data) {
       </div>
     `;
   }
-  html += `<p class="timeline-note" style="font-size:11px;line-height:1.7;color:var(--text-dim);margin:16px 0 0">Timing is estimated. Do not use for contraception.</p></div>`;
+  html += `<p class="timeline-note">Timing is estimated. Do not use for contraception.</p></div>`;
 
   return html;
 }
