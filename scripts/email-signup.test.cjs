@@ -26,6 +26,10 @@ test('signup waits for acceptance, prevents duplicate requests, and preserves ed
  const data=w.loadData();data.partner_name='New name';w.saveData(data);
  requests[0].resolve({ok:true,status:200});assert.equal(await result,true);
  assert.equal(w.loadData().email,'test@example.com');assert.equal(w.loadData().email_prompted,true);
+ assert.equal(w.document.querySelector('#email-signup-status').textContent,'you’re signed up.');
+ assert.equal(w.document.querySelector('#settings-email'),null);
+ assert.equal(w.document.querySelector('#settings-save-email'),null);
+ assert.equal(w.document.querySelector('#settings-clear-email'),null);
  assert.equal(w.loadData().partner_name,'New name');assert.match(w.document.querySelector('#toast').textContent,/keep you posted/);
 });
 

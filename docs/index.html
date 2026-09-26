@@ -1506,7 +1506,7 @@ function renderOnboarding() {
         </div>
       </div>
       <div class="onboard-field">
-        <div class="onboard-label">email (optional)</div>
+        <div class="onboard-label">product updates (optional)</div>
         <div class="log-form">
           <input type="email" class="log-input" id="onboard-email" maxlength="320" placeholder="email@example.com">
         </div>
@@ -1835,15 +1835,15 @@ function renderManage(status, data, history) {
   // Email in settings
   html += `
     <div class="settings-section">
-      <div class="section-title">email</div>
+      <div class="section-title">product updates</div>
       <div class="settings-row" style="border-bottom:none">
         ${data.email
-          ? `<span class="settings-label" id="settings-email-value"></span><button class="settings-save" id="settings-clear-email">remove</button>`
+          ? `<span class="settings-label" id="email-signup-status">you’re signed up.</span>`
           : `<input type="email" class="log-input" id="settings-email" maxlength="320" placeholder="email@example.com" style="flex:1">
-             <button class="settings-save" id="settings-save-email" style="margin-left:8px" ${emailSubmissionPending ? 'disabled' : ''}>${emailSubmissionPending ? 'sending…' : 'save'}</button>`
+             <button class="settings-save" id="settings-save-email" style="margin-left:8px" ${emailSubmissionPending ? 'disabled' : ''}>${emailSubmissionPending ? 'sending…' : 'sign up'}</button>`
         }
       </div>
-      <div style="font-size:10px;color:var(--text-muted);padding-top:4px">Email sent to Formspree</div>
+      ${!data.email ? '<div style="font-size:10px;color:var(--text-muted);padding-top:4px">Email sent to Formspree</div>' : ''}
     </div>
   `;
 
@@ -2011,8 +2011,6 @@ function bindSettings() {
   if (emailInput) emailInput.value = emailDraft;
   const nameInput = document.getElementById('settings-name');
   if (nameInput) nameInput.value = displayedData.partner_name || '';
-  const emailLabel = document.getElementById('settings-email-value');
-  if (emailLabel) emailLabel.textContent = displayedData.email || '';
 
   const saveBtn = document.getElementById('settings-save-cycle');
   if (saveBtn) {
@@ -2085,16 +2083,7 @@ function bindSettings() {
     });
   }
 
-  const clearEmail = document.getElementById('settings-clear-email');
-  if (clearEmail) {
-    clearEmail.addEventListener('click', () => {
-      const data = loadData();
-      data.email = null;
-      saveData(data);
-      toast('email removed');
-      render();
-    });
-  }
+
 }
 
 function confirmDel(dateStr) {

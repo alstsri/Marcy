@@ -35,7 +35,8 @@ test('imported name and email stay inert in settings, dashboard and confirmation
   await restore(w, {...base(),partner_name:payload,email:payload});
   w.switchView('manage');
   assert.equal(w.document.querySelector('#settings-name').value, payload);
-  assert.equal(w.document.querySelector('#settings-email-value').textContent, payload);
+  assert.equal(w.document.querySelector('#email-signup-status').textContent, 'you’re signed up.');
+  assert.equal(w.document.querySelector('#settings-clear-email'), null);
   w.switchView('dashboard'); w.toggleToday(); w.confirmPeriodEnd(2);
   assert.ok(w.document.querySelector('#confirm-root').textContent.includes(payload));
   assert.equal(w.document.querySelector('#injected'), null);
@@ -101,7 +102,8 @@ test('previously stored hostile name/email also render inertly', t => {
   const payload = '<svg id="injected" onload="window.__xss=1"></svg>';
   const w = boot(t, {...base(),partner_name:payload,email:payload});
   w.toggleToday(); w.switchView('manage');
-  assert.equal(w.document.querySelector('#settings-email-value').textContent, payload);
+  assert.equal(w.document.querySelector('#email-signup-status').textContent, 'you’re signed up.');
+  assert.equal(w.document.querySelector('#settings-clear-email'), null);
   assert.equal(w.document.querySelector('#injected'), null);
   assert.equal(w.__xss, undefined);
 });
