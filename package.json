@@ -1,13 +1,13 @@
 {
   "name": "marcy",
   "version": "1.0.0",
-  "description": "A simple, private cycle tracker that runs locally on your Mac. No accounts, no cloud — just your data on your machine.",
+  "description": "A simple, private cycle tracker that runs locally on your Mac. No accounts, no cloud \u2014 just your data on your machine.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test scripts/*.test.cjs"
   },
   "repository": {
     "type": "git",
@@ -25,5 +25,8 @@
     "@capacitor/core": "^8.3.1",
     "@capacitor/ios": "^8.3.1",
     "@capacitor/local-notifications": "^8.0.2"
+  },
+  "devDependencies": {
+    "jsdom": "22.1.0"
   }
 }

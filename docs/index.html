@@ -861,7 +861,7 @@ function saveData(data) {
 
 // ── Export / Import ─────────────────────────────────────────────
 function exportData() {
-  const data = loadData();
+  const data = { ...loadData(), schema_version: 1 };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -872,26 +872,82 @@ function exportData() {
   toast('backup downloaded');
 }
 
+// Backups are untrusted input. Build a new, allowlisted object before storage.
+const MAX_BACKUP_BYTES = 1024 * 1024;
+function validateBackup(input) {
+  const fail = () => { throw new Error('invalid backup file'); };
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (!object(input) || (input.schema_version !== undefined && input.schema_version !== 1)) fail();
+  const today = isoDate(new Date());
+  const validDate = value => {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    return isoDate(parseDate(value)) === value && value <= today;
+  };
+  const dates = value => {
+    if (!Array.isArray(value) || value.length > 10000 || !value.every(validDate) || new Set(value).size !== value.length) fail();
+    return [...value].sort();
+  };
+  const text = (value, limit) => {
+    if (value === undefined || value === null) return null;
+    if (typeof value !== 'string' || value.length > limit) fail();
+    return value;
+  };
+  const flag = (value, fallback = false) => {
+    if (value === undefined) return fallback;
+    if (typeof value !== 'boolean') fail();
+    return value;
+  };
+  const cycle = value => {
+    if (!Number.isInteger(value) || value < 18 || value > 45) fail();
+    return value;
+  };
+  const settings = input.settings === undefined ? {} : input.settings;
+  if (!object(settings)) fail();
+  const ends = input.period_ends === undefined ? {} : input.period_ends;
+  if (!object(ends) || Object.keys(ends).length > 10000) fail();
+  const periodEnds = {};
+  for (const [start, end] of Object.entries(ends)) {
+    if (!validDate(start) || !validDate(end) || end < start) fail();
+    periodEnds[start] = end;
+  }
+  return {
+    schema_version: 1,
+    periods: dates(input.periods),
+    tensions: dates(input.tensions === undefined ? [] : input.tensions),
+    settings: {
+      default_cycle_length: cycle(settings.default_cycle_length === undefined ? 28 : settings.default_cycle_length),
+      manual_cycle_length: settings.manual_cycle_length == null ? null : cycle(settings.manual_cycle_length),
+    },
+    onboarded: flag(input.onboarded),
+    email_prompted: flag(input.email_prompted),
+    email: text(input.email, 320),
+    paused: flag(input.paused),
+    partner_name: text(input.partner_name, 200),
+    period_ends: periodEnds,
+  };
+}
+
 function importData(file) {
+  if (file.size > MAX_BACKUP_BYTES) { toast('backup file is too large', true); return; }
   const reader = new FileReader();
+  reader.onerror = () => toast('could not read backup file', true);
   reader.onload = (e) => {
+    let data;
     try {
-      const data = JSON.parse(e.target.result);
-      if (!data.periods || !Array.isArray(data.periods)) {
-        toast('invalid backup file', true);
-        return;
-      }
-      if (!data.tensions) data.tensions = [];
-      if (!data.settings) data.settings = { default_cycle_length: 28, manual_cycle_length: null };
+      data = validateBackup(JSON.parse(e.target.result));
       data.onboarded = true;
-      if (data.email_prompted === undefined) data.email_prompted = false;
-      if (data.email === undefined) data.email = null;
-      saveData(data);
-      toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
-      render();
     } catch {
       toast('invalid backup file', true);
+      return;
     }
+    try {
+      saveData(data);
+    } catch {
+      toast('could not save backup — existing data kept', true);
+      return;
+    }
+    toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
+    render();
   };
   reader.readAsText(file);
 }
@@ -1085,8 +1141,14 @@ function getHistory() {
 // ── UI Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 
-function pn() { const d = loadData(); return d.partner_name || 'she'; }
-function pnPoss() { const d = loadData(); return d.partner_name ? d.partner_name + "'s" : 'her'; }
+// Only use this helper for HTML text/quoted attributes, never JavaScript or URLs.
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+function pn() { const d = loadData(); return escapeHTML(d.partner_name || 'she'); }
+function pnPoss() { const d = loadData(); return escapeHTML(d.partner_name ? d.partner_name + "'s" : 'her'); }
 
 function toast(msg, isError) {
   const t = $('#toast');
@@ -1370,7 +1432,7 @@ function renderOnboarding() {
       <div class="onboard-field">
         <div class="onboard-label">her name (optional)</div>
         <div class="log-form">
-          <input type="text" class="log-input" id="onboard-name" placeholder="e.g. Sarah" autocomplete="off">
+          <input type="text" class="log-input" id="onboard-name" maxlength="200" placeholder="e.g. Sarah" autocomplete="off">
         </div>
         <div class="onboard-note">personalizes the app — leave blank to use "she/her"</div>
       </div>
@@ -1391,7 +1453,7 @@ function renderOnboarding() {
       <div class="onboard-field">
         <div class="onboard-label">email (optional)</div>
         <div class="log-form">
-          <input type="email" class="log-input" id="onboard-email" placeholder="email@example.com">
+          <input type="email" class="log-input" id="onboard-email" maxlength="320" placeholder="email@example.com">
         </div>
         <div class="onboard-note">for product updates only — no spam, no sharing</div>
       </div>
@@ -1684,7 +1746,7 @@ function renderManage(status, data, history, tensions) {
           <div class="history-row">
             <span class="history-date">${fmtDate(f)}</span>
             <span class="history-len"></span>
-            <button class="history-del" onclick="confirmDelTension('${f}')">&times;</button>
+            <button class="history-del" data-delete-tension="${escapeHTML(f)}">&times;</button>
           </div>
         `;
       }
@@ -1709,7 +1771,7 @@ function renderManage(status, data, history, tensions) {
           <div class="history-row">
             <span class="history-date">${fmtDate(e.date)}${periodDur ? ` <span style="color:var(--text-muted)">(${periodDur})</span>` : ''}</span>
             <span class="history-len">${lenStr}</span>
-            <button class="history-del" onclick="confirmDel('${e.date}')">&times;</button>
+            <button class="history-del" data-delete-period="${escapeHTML(e.date)}">&times;</button>
           </div>
         `;
       }
@@ -1744,7 +1806,7 @@ function renderManage(status, data, history, tensions) {
     <div class="settings-section">
       <div class="section-title">her name</div>
       <div class="settings-row" style="border-bottom:none">
-        <input type="text" class="log-input" id="settings-name" placeholder="leave blank for she/her" value="${data.partner_name || ''}" style="flex:1" autocomplete="off">
+        <input type="text" class="log-input" id="settings-name" maxlength="200" placeholder="leave blank for she/her" value="" style="flex:1" autocomplete="off">
         <button class="settings-save" id="settings-save-name" style="margin-left:8px">save</button>
       </div>
     </div>
@@ -1756,8 +1818,8 @@ function renderManage(status, data, history, tensions) {
       <div class="section-title">email</div>
       <div class="settings-row" style="border-bottom:none">
         ${data.email
-          ? `<span class="settings-label">${data.email}</span><button class="settings-save" id="settings-clear-email">remove</button>`
-          : `<input type="email" class="log-input" id="settings-email" placeholder="email@example.com" style="flex:1">
+          ? `<span class="settings-label" id="settings-email-value"></span><button class="settings-save" id="settings-clear-email">remove</button>`
+          : `<input type="email" class="log-input" id="settings-email" maxlength="320" placeholder="email@example.com" style="flex:1">
              <button class="settings-save" id="settings-save-email" style="margin-left:8px">save</button>`
         }
       </div>
@@ -1857,13 +1919,19 @@ function render() {
       bindSettings();
     }
   } catch (e) {
-    $('#content').innerHTML = `<div class="empty">something went wrong.<br>${e.message}</div>`;
+    $('#content').innerHTML = `<div class="empty">something went wrong.<br>${escapeHTML(e.message)}</div>`;
     console.error('Render error:', e);
   }
 }
 
 // ── Form Binding ────────────────────────────────────────────────
 function bindForms() {
+  document.querySelectorAll('[data-delete-period]').forEach(button => {
+    button.addEventListener('click', () => confirmDel(button.dataset.deletePeriod));
+  });
+  document.querySelectorAll('[data-delete-tension]').forEach(button => {
+    button.addEventListener('click', () => confirmDelTension(button.dataset.deleteTension));
+  });
   const today = isoDate(new Date());
 
   const logInput = $('#log-date');
@@ -1921,6 +1989,12 @@ function bindForms() {
 }
 
 function bindSettings() {
+  const displayedData = loadData();
+  const nameInput = document.getElementById('settings-name');
+  if (nameInput) nameInput.value = displayedData.partner_name || '';
+  const emailLabel = document.getElementById('settings-email-value');
+  if (emailLabel) emailLabel.textContent = displayedData.email || '';
+
   const saveBtn = document.getElementById('settings-save-cycle');
   if (saveBtn) {
     saveBtn.addEventListener('click', () => {
