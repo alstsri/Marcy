@@ -75,15 +75,21 @@ test('one grid defaults to current observations when there are no completed cycl
   assert.equal(w.document.querySelector('[data-tension-day="2"] small').textContent,'—');
 });
 
-test('day details include actual dates and missing entries; later days remain reachable',t=>{
-  const w=boot(t,{periods:['2026-07-01','2026-08-15','2026-09-15'],tensions:['2026-08-09']});w.switchView('manage');
+test('day details list only logged dates and show an empty message when no events exist',t=>{
+  const w=boot(t,{periods:['2026-07-01','2026-08-15','2026-09-15'],tensions:['2026-07-02','2026-08-09']});w.switchView('manage');
   selectDay(w,40);
   const cell=w.document.querySelector('[aria-label="Completed cycles"] [data-tension-day="40"]');
   assert.ok(cell);assert.equal(cell.querySelector('small').textContent,'1/1'); details(w);
   assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-09: event recorded/);
   selectDay(w,2);
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-02: no event recorded/);
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-16: no event recorded/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-02: event recorded/);
+  assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-08-16/);
+  assert.equal(w.document.querySelectorAll('.heat-details li').length,1);
+  selectDay(w,3);
+  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged for this cycle day/);
+  assert.equal(w.document.querySelectorAll('.heat-details li').length,0);
+  mode(w,'current');
+  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged for this cycle day/);
 });
 
 test('logging tension shows the refreshed map without switching back to dashboard',t=>{

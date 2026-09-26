@@ -1111,11 +1111,12 @@ function renderTensionMap(analysis) {
   html += `<div class="today-card heat-details" id="tension-day-details" ${tensionDetailsOpen ? '' : 'hidden'}>`;
   if (tensionDetailsOpen) {
     if (current) {
-      html += `<strong>Current cycle · day ${selected}</strong><br>${detail.currentDate ? `${escapeHTML(detail.currentDate)} — ${detail.currentRecorded ? 'event recorded' : 'no event recorded'}` : 'This day has not been reached.'}<p class="heat-note">Current observations are not included in the completed-cycle comparison.</p>`;
+      html += `<strong>Current cycle · day ${selected}</strong><br>${!detail.currentDate ? 'This day has not been reached.' : detail.currentRecorded ? `${escapeHTML(detail.currentDate)} — event recorded` : 'No events logged for this cycle day.'}<p class="heat-note">Current observations are not included in the completed-cycle comparison.</p>`;
     } else {
       html += `<strong>Day ${selected}</strong><br>${detail.events} events across ${detail.eligible} completed cycles that reached this day.`;
-      if (detail.eligible) html += '<ul>' + detail.observations.map(o => `<li>${escapeHTML(o.date)}: ${o.recorded ? 'event recorded' : 'no event recorded'} (cycle started ${escapeHTML(o.start)})</li>`).join('') + '</ul>';
-      else html += '<br>No completed-cycle coverage for this day.';
+      if (detail.events) html += '<ul>' + detail.observations.filter(o => o.recorded).map(o => `<li>${escapeHTML(o.date)}: event recorded (cycle started ${escapeHTML(o.start)})</li>`).join('') + '</ul>';
+      else html += '<br>No events logged for this cycle day.';
+      if (!detail.eligible) html += '<br>No completed-cycle coverage for this day.';
       html += '<p class="heat-note">Day 1 is a logged period start. Completed cycles are intervals between logged starts; missing entries can distort the comparison. Brighter color means a larger recorded share, not a prediction.</p>';
     }
     html += '<p class="heat-note">No event recorded does not mean no tension.</p>';
