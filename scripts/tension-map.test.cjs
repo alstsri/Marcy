@@ -16,6 +16,19 @@ function boot(t, data, plugin) {
   }}); t.after(()=>dom.window.close()); assert.deepEqual(errors,[]); return dom.window;
 }
 const summary=(w)=>w.getTensionAnalysis(w.loadData());
+function selectDay(w,day) {
+  for(let n=0;n<100;n++) {
+    const button=w.document.querySelector(`[data-tension-day="${day}"]`);
+    if(button){button.click();return;}
+    const first=Number(w.document.querySelector('[data-tension-day]').dataset.tensionDay);
+    const buttons=w.document.querySelectorAll('[data-tension-page]');
+    const next=buttons[day<first?0:1]; assert.equal(next.disabled,false);next.click();
+  }
+  assert.fail('Day was not reachable');
+}
+function details(w) {if(w.document.querySelector('#tension-details-toggle').getAttribute('aria-expanded')==='false')w.document.querySelector('#tension-details-toggle').click();}
+function mode(w,value) {const select=w.document.querySelector('#tension-mode');select.value=value;select.dispatchEvent(new w.Event('change'));}
+
 
 test('existing event dates map to completed/current cycles and prehistory without migration',t=>{
   const data={periods:['2026-08-01','2026-08-29'],tensions:['2026-07-30','2026-08-01','2026-08-28','2026-08-29','2026-09-24']};
@@ -26,6 +39,7 @@ test('existing event dates map to completed/current cycles and prehistory withou
   assert.equal(w.getTensionDay(a,27).currentRecorded,true);
   assert.deepEqual(Array.from(a.unmapped),['2026-07-30']);
   w.switchView('manage');
+  details(w);
   assert.ok(w.document.querySelector('.tension-map').textContent.includes('2026-07-30'));
   assert.equal(w.localStorage.getItem('marcy_data'),raw);
 });
@@ -51,25 +65,28 @@ test('different lengths use per-day denominators and current cycle never dilutes
   assert.equal(w.getTensionDay(a,5).currentRecorded,true);
 });
 
-test('single in-progress cycle shows current observations with no completed coverage',t=>{
+test('one grid defaults to current observations when there are no completed cycles',t=>{
   const w=boot(t,{periods:['2026-09-20'],tensions:['2026-09-21']}); w.switchView('manage');
-  const historical=w.document.querySelector('[aria-label="Completed cycles"] [data-tension-day="2"]');
-  const current=w.document.querySelector('[aria-label="Current cycle"] [data-tension-day="2"]');
-  assert.equal(historical.querySelector('small').textContent,'—');
-  assert.equal(current.querySelector('small').textContent,'●');
-  assert.equal(w.document.querySelector('[aria-label="Current cycle"] [data-tension-day="6"] small').textContent,'—');
-  current.click();
+  assert.equal(w.document.querySelectorAll('.heat-grid').length,1);
+  assert.equal(w.document.querySelector('#tension-mode').value,'current');
+  selectDay(w,2);
+  assert.equal(w.document.querySelector('[data-tension-day="2"] small').textContent,'●');
+  assert.equal(w.document.querySelector('[data-tension-day="6"] small').textContent,'—');
+  assert.equal(w.document.querySelector('#tension-details-toggle').getAttribute('aria-expanded'),'false');
+  details(w);
   assert.ok(w.document.querySelector('.heat-details').textContent.includes('2026-09-21 — event recorded'));
+  mode(w,'completed');
+  assert.equal(w.document.querySelectorAll('.heat-grid').length,1);
+  assert.equal(w.document.querySelector('[data-tension-day="2"] small').textContent,'—');
 });
 
 test('day details include actual dates and missing entries; later days remain reachable',t=>{
   const w=boot(t,{periods:['2026-07-01','2026-08-15','2026-09-15'],tensions:['2026-08-09']});w.switchView('manage');
-  w.document.querySelector('[data-tension-page="1"]').click();
+  selectDay(w,40);
   const cell=w.document.querySelector('[aria-label="Completed cycles"] [data-tension-day="40"]');
-  assert.ok(cell);assert.equal(cell.querySelector('small').textContent,'1/1'); cell.click();
+  assert.ok(cell);assert.equal(cell.querySelector('small').textContent,'1/1'); details(w);
   assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-09: event recorded/);
-  w.document.querySelector('[data-tension-page="0"]').click();
-  w.document.querySelector('[data-tension-day="2"]').click();
+  selectDay(w,2);
   assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-02: no event recorded/);
   assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-16: no event recorded/);
 });
@@ -78,6 +95,7 @@ test('logging tension shows the refreshed map without switching back to dashboar
   const w=boot(t,{periods:['2026-09-20'],tensions:[]});w.switchView('manage');
   w.document.querySelector('#tension-date').value='2026-09-24';w.document.querySelector('#tension-btn').click();
   assert.ok(w.document.querySelector('.tension-map'));
+  selectDay(w,5);
   assert.equal(w.document.querySelector('[aria-label="Current cycle"] [data-tension-day="5"] small').textContent,'●');
 });
 
@@ -96,4 +114,39 @@ test('native startup cancels previously pending tension alerts and schedules no 
   });await complete;
   assert.equal(cancelled[0].id,3); assert.ok(scheduled.length);
   assert.ok(scheduled.every(n=>!/tension/i.test(n.title+n.body)));
+});
+
+
+test('default is the last fourteen days of the average, with all earlier/later days accessible',t=>{
+  for(const [periods,first,last] of [[['2026-08-01','2026-08-29'],15,28],[['2026-08-01','2026-08-31'],17,30]]) {
+    const w=boot(t,{periods,tensions:[]});w.switchView('manage');
+    const cells=w.document.querySelectorAll('[data-tension-day]');
+    assert.equal(cells.length,14);assert.equal(Number(cells[0].dataset.tensionDay),first);assert.equal(Number(cells[13].dataset.tensionDay),last);
+    const ranges=w.getTensionRanges(summary(w));
+    const all=Array.from(ranges).flatMap(r=>Array.from({length:r.last-r.first+1},(_,i)=>r.first+i));
+    assert.deepEqual(all,Array.from({length:summary(w).maxDay},(_,i)=>i+1));
+    selectDay(w,1);assert.ok(w.document.querySelector('[data-tension-day="1"]'));
+  }
+});
+
+test('zero-event values are dimmed without hiding coverage or recorded events',t=>{
+  const w=boot(t,{periods:['2026-08-01','2026-08-29'],tensions:['2026-08-16']});w.switchView('manage');
+  const zero=w.document.querySelector('[data-tension-day="15"]');
+  const event=w.document.querySelector('[data-tension-day="16"]');
+  assert.ok(zero.classList.contains('zero-events'));assert.equal(zero.querySelector('small').textContent,'0/1');
+  assert.equal(event.classList.contains('zero-events'),false);assert.equal(event.querySelector('small').textContent,'1/1');
+});
+
+test('details toggle reuses today-card styling and remains optional when selecting days',t=>{
+  const w=boot(t,{periods:['2026-08-01','2026-08-29'],tensions:['2026-08-16']});w.switchView('manage');
+  assert.ok(w.document.querySelector('#tension-details-toggle').classList.contains('today-btn'));
+  assert.equal(w.document.querySelector('#tension-day-details').hidden,true);
+  selectDay(w,16);
+  assert.equal(w.document.querySelector('#tension-day-details').hidden,true);
+  details(w);
+  assert.equal(w.document.querySelector('#tension-day-details').hidden,false);
+  assert.ok(w.document.querySelector('#tension-day-details').classList.contains('today-card'));
+  assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-16: event recorded/);
+  w.document.querySelector('#tension-details-toggle').click();
+  assert.equal(w.document.querySelector('#tension-day-details').hidden,true);
 });
