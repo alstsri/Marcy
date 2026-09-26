@@ -1338,6 +1338,19 @@ function logPeriodEnd() {
   toast(`period logged: ${duration} days`);
   render();
 }
+
+function confirmPeriodEnd(cycleDay) {
+  if (cycleDay <= 3) {
+    showConfirm(
+      `Only day ${cycleDay} of ${pnPoss()} period — end it now?`,
+      logPeriodEnd,
+      'yes, ended',
+      'confirm-ok'
+    );
+  } else {
+    logPeriodEnd();
+  }
+}
 function shareMarcy() {
   const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle — what\'s happening, what to expect, and how to show up. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
   if (navigator.share) { navigator.share(shareData).catch(() => {}); }
@@ -1561,7 +1574,7 @@ function renderDashboard(status, data) {
   // Period ended button (during menstrual phase, if no end date logged yet)
   if (phaseKey === 'menstrual' && !currentPeriodEnded && status.cycle_day > 1) {
     html += `
-      <button class="late-prompt-btn" style="width:100%;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);margin-bottom:32px;padding:12px" onclick="logPeriodEnd()">
+      <button class="late-prompt-btn" style="width:100%;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);margin-bottom:32px;padding:12px" onclick="confirmPeriodEnd(${status.cycle_day})">
         ${pnPoss()} period has ended
       </button>
     `;
