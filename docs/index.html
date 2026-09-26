@@ -1549,14 +1549,10 @@ function bindOnboarding() {
       const nameVal = document.getElementById('onboard-name').value.trim();
       if (nameVal) data.partner_name = nameVal;
       const emailVal = document.getElementById('onboard-email').value.trim();
-      if (emailVal && emailVal.includes('@')) {
-        data.email = emailVal;
-        data.email_prompted = true;
-        submitEmail(emailVal);
-      }
       saveData(data);
       toast('welcome to marcy');
       render();
+      if (emailVal && emailVal.includes('@')) submitEmail(emailVal);
     });
   }
   if (restoreBtn && fileInput) {
@@ -1566,20 +1562,42 @@ function bindOnboarding() {
 }
 
 // ── Email ───────────────────────────────────────────────────────
-function submitEmail(email) {
-  const data = loadData();
-  data.email = email;
-  data.email_prompted = true;
-  saveData(data);
-  if (FORMSPREE_URL) {
-    fetch(FORMSPREE_URL, {
+let emailSubmissionPending = false;
+let emailDraft = '';
+async function submitEmail(email) {
+  if (emailSubmissionPending) return false;
+  emailSubmissionPending = true;
+  emailDraft = email;
+  const button = document.getElementById('settings-save-email');
+  if (button) { button.disabled = true; button.textContent = 'sending…'; }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let accepted = false;
+  try {
+    if (!FORMSPREE_URL) throw new Error('Email signup unavailable');
+    const response = await fetch(FORMSPREE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ email }),
-    }).catch(() => {});
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error('Email signup rejected');
+    // Read fresh records so edits made while waiting for the server are preserved.
+    const data = loadData();
+    data.email = email;
+    data.email_prompted = true;
+    saveData(data);
+    emailDraft = '';
+    accepted = true;
+  } catch {
+    // Keep the draft available in Settings for a retry; do not mark signup complete.
+  } finally {
+    clearTimeout(timeout);
+    emailSubmissionPending = false;
   }
-  toast('thanks — we\'ll keep you posted');
   render();
+  toast(accepted ? "thanks — we'll keep you posted" : "couldn't sign up — try again in settings", !accepted);
+  return accepted;
 }
 
 function skipEmail() {
@@ -1822,7 +1840,7 @@ function renderManage(status, data, history) {
         ${data.email
           ? `<span class="settings-label" id="settings-email-value"></span><button class="settings-save" id="settings-clear-email">remove</button>`
           : `<input type="email" class="log-input" id="settings-email" maxlength="320" placeholder="email@example.com" style="flex:1">
-             <button class="settings-save" id="settings-save-email" style="margin-left:8px">save</button>`
+             <button class="settings-save" id="settings-save-email" style="margin-left:8px" ${emailSubmissionPending ? 'disabled' : ''}>${emailSubmissionPending ? 'sending…' : 'save'}</button>`
         }
       </div>
       <div style="font-size:10px;color:var(--text-muted);padding-top:4px">Email sent to Formspree</div>
@@ -1989,6 +2007,8 @@ function bindForms() {
 
 function bindSettings() {
   const displayedData = loadData();
+  const emailInput = document.getElementById('settings-email');
+  if (emailInput) emailInput.value = emailDraft;
   const nameInput = document.getElementById('settings-name');
   if (nameInput) nameInput.value = displayedData.partner_name || '';
   const emailLabel = document.getElementById('settings-email-value');
