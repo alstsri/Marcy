@@ -762,6 +762,9 @@
     text-transform: uppercase;
   }
 
+  .footer a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; color: inherit; text-decoration: none; }
+  .footer a:hover, .footer a:focus-visible { color: var(--text); text-decoration: underline; }
+
   /* Empty state */
   .empty {
     text-align: center;
@@ -1888,7 +1891,7 @@ function renderManage(status, data, history) {
     </div>
   `;
 
-  html += `<div class="footer">marcy &middot; local &middot; private</div>`;
+  html += `<div class="footer">marcy &middot; local &middot; private<br><a href="privacy.html">privacy</a><a href="support.html">support</a></div>`;
   return html;
 }
 
