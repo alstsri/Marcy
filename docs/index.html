@@ -940,14 +940,20 @@ function importData(file) {
       toast('invalid backup file', true);
       return;
     }
-    try {
-      saveData(data);
-    } catch {
-      toast('could not save backup — existing data kept', true);
-      return;
-    }
-    toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
-    render();
+    showConfirm(
+      'This will replace your current history.<br><span style="font-size:11px;color:var(--text-dim)">Your period dates, tension events, and settings will be replaced with the contents of this backup.</span>',
+      () => {
+        try {
+          saveData(data);
+        } catch {
+          toast('could not save backup — existing data kept', true);
+          return;
+        }
+        toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
+        render();
+      },
+      'replace history'
+    );
   };
   reader.readAsText(file);
 }

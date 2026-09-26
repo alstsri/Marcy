@@ -20,10 +20,10 @@ function boot(t, data = base()) {
   assert.deepEqual(errors, []);
   return dom.window;
 }
-function restore(w, data) {
+function restore(w, data, confirm = true) {
   return new Promise(resolve => {
     const Reader = w.FileReader;
-    w.FileReader = class extends Reader { constructor() { super(); this.addEventListener('loadend', () => {w.FileReader = Reader; resolve();}, {once:true}); } };
+    w.FileReader = class extends Reader { constructor() { super(); this.addEventListener('loadend', () => {w.FileReader = Reader; if (confirm) w.document.querySelector('#confirm-yes')?.click(); resolve();}, {once:true}); } };
     w.importData(new w.File([JSON.stringify(data)], 'backup.json', {type:'application/json'}));
   });
 }
@@ -65,6 +65,7 @@ test('invalid backups never replace existing records', async t => {
     await restore(w, data);
     assert.equal(w.localStorage.getItem('marcy_data'), original, JSON.stringify(data));
     assert.equal(w.document.querySelector('#toast').textContent, 'invalid backup file');
+    assert.equal(w.document.querySelector('#confirm-yes'), null);
   }
 });
 
@@ -105,4 +106,33 @@ test('previously stored hostile name/email also render inertly', t => {
   assert.equal(w.document.querySelector('#settings-email-value').textContent, payload);
   assert.equal(w.document.querySelector('#injected'), null);
   assert.equal(w.__xss, undefined);
+});
+
+
+test('valid imports wait for confirmation; cancel preserves history and confirmation replaces it', async t => {
+  const w = boot(t);
+  const original = w.localStorage.getItem('marcy_data');
+  const replacement = {...base(), periods:['2026-09-01'], tensions:[], period_ends:{}};
+  await restore(w, replacement, false);
+  assert.ok(w.document.querySelector('.confirm-msg').textContent.includes('This will replace your current history.'));
+  assert.equal(w.document.querySelector('#confirm-yes').textContent, 'replace history');
+  assert.equal(w.localStorage.getItem('marcy_data'), original);
+  w.document.querySelector('.confirm-cancel').click();
+  assert.equal(w.localStorage.getItem('marcy_data'), original);
+  assert.equal(w.document.querySelector('#confirm-yes'), null);
+  await restore(w, replacement, false);
+  assert.equal(w.localStorage.getItem('marcy_data'), original);
+  w.document.querySelector('#confirm-yes').click();
+  assert.deepEqual(stored(w).periods, ['2026-09-01']);
+  assert.deepEqual(stored(w).tensions, []);
+});
+
+test('empty backups also require confirmation and dismissing the overlay preserves data', async t => {
+  const w = boot(t);
+  const original = w.localStorage.getItem('marcy_data');
+  await restore(w, {periods:[]}, false);
+  assert.ok(w.document.querySelector('#confirm-yes'));
+  w.document.querySelector('.confirm-overlay').click();
+  assert.equal(w.localStorage.getItem('marcy_data'), original);
+  assert.equal(w.document.querySelector('#confirm-yes'), null);
 });
