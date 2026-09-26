@@ -24,10 +24,12 @@ function boot(t, day, plugin) {
 test('fertility banner and timeline clearly label estimates', t => {
   const w = boot(t, '12');
   assert.equal(w.document.querySelector('.phase-label').textContent, 'ESTIMATED FERTILE WINDOW');
-  assert.equal(w.document.querySelector('.phase-sub').textContent, 'Calendar estimate only; do not use for contraception.');
+  assert.equal(w.document.querySelector('.phase-banner .phase-sub'), null);
+  assert.equal(w.document.querySelector('.timeline-title').textContent, 'Upcoming estimates');
+  assert.equal(w.document.querySelector('.timeline p').textContent, 'Timing is estimated. Do not use for contraception.');
   const labels = [...w.document.querySelectorAll('.tl-event')].map(el => el.textContent);
-  assert.ok(labels.includes('Estimated fertile window'));
-  assert.ok(labels.includes('Estimated ovulation'));
+  assert.ok(labels.includes('Fertile window'));
+  assert.ok(labels.includes('Ovulation'));
   w.toggleToday();
   assert.ok(w.document.querySelector('#content').textContent.includes('estimated ovulation phase'));
 });
@@ -55,6 +57,13 @@ test('startup replaces old alerts without scheduling a fertile-window-ended noti
   const fertility = scheduled.find(n => n.title === 'Estimated fertile window');
   assert.ok(fertility);
   assert.equal(fertility.body, 'Calendar estimate only; do not use for contraception.');
-  assert.ok(scheduled.some(n => n.title === 'PMS window begins'));
+  assert.ok(scheduled.some(n => n.title === 'Estimated PMS window'));
   assert.ok(scheduled.every(n => !/window ended|ovulation is behind|high conception risk/i.test(n.title + n.body)));
+});
+
+
+test('PMS banner identifies its estimate outside the timeline', t => {
+  const w = boot(t, '23');
+  assert.equal(w.document.querySelector('.phase-label').textContent, 'ESTIMATED PMS WINDOW');
+  assert.equal(w.document.querySelectorAll('.timeline p').length, 1);
 });

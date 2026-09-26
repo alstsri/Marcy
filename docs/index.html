@@ -1102,7 +1102,7 @@ function getStatus() {
   } else if (today.getTime() === preds.ovulationDay.getTime()) {
     phase = 'fertile'; phaseLabel = 'ESTIMATED OVULATION';
   } else if (preds.pmsStart <= today && today < preds.nextPeriod) {
-    phase = 'pms'; phaseLabel = 'PMS WINDOW';
+    phase = 'pms'; phaseLabel = 'ESTIMATED PMS WINDOW';
   } else if (today >= preds.nextPeriod) {
     const daysLate = daysBetween(preds.nextPeriod, today);
     phase = 'late';
@@ -1548,13 +1548,12 @@ function renderDashboard(status, data) {
   // Phase banner (suppress when paused)
   if (status.phase_label && !data.paused) {
     let subMsg = '';
-    if (status.phase === 'fertile') subMsg = 'Calendar estimate only; do not use for contraception.';
-    else if (status.phase === 'pms') subMsg = 'extra patience goes a long way';
+    if (status.phase === 'pms') subMsg = 'extra patience goes a long way';
     else if (status.phase === 'late') subMsg = getLateReassurance(daysLate, data);
     html += `
       <div class="phase-banner ${status.phase}">
         <div class="phase-label">${status.phase_label}</div>
-        <div class="phase-sub">${subMsg}</div>
+        ${subMsg ? `<div class="phase-sub">${subMsg}</div>` : ''}
       </div>
     `;
   }
@@ -1662,8 +1661,8 @@ function renderDashboard(status, data) {
 
   // Timeline
   const events = [
-    { label: 'Estimated fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
-    { label: 'Estimated ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
+    { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
+    { label: 'Ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
     { label: 'PMS starts', date: status.pms_start, days: status.days_to_pms },
   ];
   if (status.tension_alert) {
@@ -1672,7 +1671,7 @@ function renderDashboard(status, data) {
   events.push({ label: 'Next period', date: status.next_period, days: status.days_to_period });
   events.sort((a, b) => a.days - b.days);
 
-  html += `<div class="timeline"><div class="timeline-title">upcoming</div>`;
+  html += `<div class="timeline"><div class="timeline-title">Upcoming estimates</div><p class="heat-note" style="font-size:11px;line-height:1.7;color:var(--text-dim);margin:10px 0">Timing is estimated. Do not use for contraception.</p>`;
   for (const ev of events) {
     let cd;
     if (ev.end && ev.days < 0) {
@@ -2148,7 +2147,7 @@ async function scheduleNotifications() {
   scheduleAt(preds.fertileStart, 'Estimated fertile window', 'Calendar estimate only; do not use for contraception.');
 
   // PMS start
-  scheduleAt(preds.pmsStart, 'PMS window begins', 'Patience and small gestures go a long way this week.');
+  scheduleAt(preds.pmsStart, 'Estimated PMS window', 'Patience and small gestures go a long way this week.');
 
   // Peak tension (if data exists)
   const tensionData = getTensionAnalysis(data);
