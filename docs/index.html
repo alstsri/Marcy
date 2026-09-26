@@ -1105,7 +1105,7 @@ function renderTensionMap(analysis) {
     const value = !coverage ? '—' : current ? (events ? '●' : '0') : `${events}/${cell.eligible}`;
     html += `<button class="heat-cell ${isToday ? 'is-today ' : ''}${!coverage ? 'no-coverage' : !events ? 'zero-events' : ''}" data-tension-day="${day}" data-level="${level}" aria-pressed="${day === tensionSelectedDay}" ${isToday ? 'aria-current="date"' : ''} aria-label="Day ${day}${isToday ? ' (today)' : ''}: ${label}">${day}<small>${value}</small></button>`;
   }
-  html += `</div><p class="heat-note">${current ? '● event recorded · 0 no event recorded · — day not reached' : 'events / completed cycles · — no coverage'}</p>`;
+  html += `</div><p class="heat-note">${current ? '● event recorded · 0 no event recorded · — day not reached' : 'events / completed cycles'}</p>`;
   html += `<button class="today-btn heat-history-btn${tensionDetailsOpen ? ' open' : ''}" id="tension-details-toggle" aria-expanded="${tensionDetailsOpen}" aria-controls="tension-day-details"><span>day details — day ${selected}</span><span class="today-arrow" aria-hidden="true">&#9654;</span></button>`;
   const detail = getTensionDay(analysis, selected);
   html += `<div class="today-card heat-details" id="tension-day-details" ${tensionDetailsOpen ? '' : 'hidden'}>`;
@@ -1392,7 +1392,6 @@ const todayContent = {
 let todayCardOpen = false;
 let termsOpen = false;
 let currentView = 'dashboard';
-let tensionHistoryOpen = false;
 let periodHistoryOpen = false;
 
 function getPhaseKey(status) {
@@ -1441,7 +1440,6 @@ function todayButton(status) {
 
 function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
 function toggleTerms() { termsOpen = !termsOpen; render(); }
-function toggleTensionHistory() { tensionHistoryOpen = !tensionHistoryOpen; render(); }
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
 function pauseTracking() { const data = loadData(); data.paused = true; saveData(data); toast('tracking paused'); render(); }
 function logPeriodEnd() {
@@ -1733,7 +1731,7 @@ function renderDashboard(status, data) {
 }
 
 // ── Manage View ─────────────────────────────────────────────────
-function renderManage(status, data, history, tensions) {
+function renderManage(status, data, history) {
   let html = '';
 
   // Log forms
@@ -1753,29 +1751,6 @@ function renderManage(status, data, history, tensions) {
       </div>
     </div>
   `;
-
-  html += renderTensionMap(status.tension_analysis);
-
-  // Tension history
-  if (tensions.length > 0) {
-    html += `<div class="history-section">
-      <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleTensionHistory()">
-        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${tensionHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
-        tension log — ${tensions.length}
-      </button>`;
-    if (tensionHistoryOpen) {
-      for (const f of [...tensions].reverse()) {
-        html += `
-          <div class="history-row">
-            <span class="history-date">${fmtDate(f)}</span>
-            <span class="history-len"></span>
-            <button class="history-del" data-delete-tension="${escapeHTML(f)}">&times;</button>
-          </div>
-        `;
-      }
-    }
-    html += `</div>`;
-  }
 
   // Period history
   if (history.entries.length > 0) {
@@ -1801,6 +1776,8 @@ function renderManage(status, data, history, tensions) {
     }
     html += `</div>`;
   }
+
+  html += renderTensionMap(status.tension_analysis);
 
   // Settings
   html += `
@@ -1916,7 +1893,6 @@ function render() {
 
   const status = getStatus();
   const history = getHistory();
-  const tensions = [...(data.tensions || [])].sort();
 
   if (status.empty) {
     $('#content').innerHTML = `
@@ -1937,7 +1913,7 @@ function render() {
     if (currentView === 'dashboard') {
       $('#content').innerHTML = renderDashboard(status, data);
     } else {
-      $('#content').innerHTML = renderManage(status, data, history, tensions);
+      $('#content').innerHTML = renderManage(status, data, history);
       bindForms();
       bindSettings();
     }
@@ -1952,9 +1928,6 @@ function bindForms() {
   bindTensionMap();
   document.querySelectorAll('[data-delete-period]').forEach(button => {
     button.addEventListener('click', () => confirmDel(button.dataset.deletePeriod));
-  });
-  document.querySelectorAll('[data-delete-tension]').forEach(button => {
-    button.addEventListener('click', () => confirmDelTension(button.dataset.deleteTension));
   });
   const today = isoDate(new Date());
 

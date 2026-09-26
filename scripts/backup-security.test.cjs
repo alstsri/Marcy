@@ -87,16 +87,14 @@ test('oversize backup is rejected before reading', t => {
   assert.equal(w.document.querySelector('#toast').textContent, 'backup file is too large');
 });
 
-test('history delete buttons use listeners and delete only selected entries', t => {
-  const w = boot(t); w.switchView('manage'); w.togglePeriodHistory(); w.toggleTensionHistory();
+test('period history delete buttons use listeners and delete only selected entries', t => {
+  const w = boot(t); w.switchView('manage'); w.togglePeriodHistory();
+  const tensionsBefore = stored(w).tensions;
   let button = w.document.querySelector('[data-delete-period="2026-08-01"]');
   assert.equal(button.getAttribute('onclick'), null);
   button.click(); w.document.querySelector('#confirm-yes').click();
   assert.deepEqual(stored(w).periods, ['2026-08-29']);
-  button = w.document.querySelector('[data-delete-tension]');
-  assert.equal(button.getAttribute('onclick'), null);
-  button.click(); w.document.querySelector('#confirm-yes').click();
-  assert.deepEqual(stored(w).tensions, []);
+  assert.deepEqual(stored(w).tensions, tensionsBefore);
 });
 
 test('previously stored hostile name/email also render inertly', t => {
