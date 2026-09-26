@@ -1098,9 +1098,9 @@ function getStatus() {
   const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
   let phase = 'normal', phaseLabel = '';
   if (preds.fertileStart <= today && today <= preds.fertileEnd) {
-    phase = 'fertile'; phaseLabel = 'FERTILE WINDOW';
+    phase = 'fertile'; phaseLabel = 'ESTIMATED FERTILE WINDOW';
   } else if (today.getTime() === preds.ovulationDay.getTime()) {
-    phase = 'fertile'; phaseLabel = 'OVULATION DAY';
+    phase = 'fertile'; phaseLabel = 'ESTIMATED OVULATION';
   } else if (preds.pmsStart <= today && today < preds.nextPeriod) {
     phase = 'pms'; phaseLabel = 'PMS WINDOW';
   } else if (today >= preds.nextPeriod) {
@@ -1270,10 +1270,10 @@ const todayContent = {
     ],
   },
   ovulation: {
-    label: 'ovulation phase',
+    label: 'estimated ovulation phase',
     insights: [
       "Estrogen has peaked and testosterone gets a brief spike. <strong>She's likely at her most confident, social, and energized.</strong> This is the biological high point of the cycle.",
-      "Her body is at peak fertility. <strong>She may feel more attractive and outgoing.</strong> Communication skills and mood are typically at their best right now.",
+      "These dates are a calendar estimate. <strong>Marcy cannot confirm whether or when ovulation occurs.</strong> Do not use this estimate for contraception.",
       "Hormones are peaking — this is the top of the wave. <strong>She might feel magnetic, talkative, and high-energy.</strong> Libido is often highest during this window too.",
       "This is the phase where everything is firing. <strong>Mood, confidence, social energy — all up.</strong> She may want to go out, see people, or be more spontaneous than usual.",
       "Her body is running at its biological peak right now. <strong>Energy, mood, and confidence are all elevated.</strong> She may carry herself differently — more open, more expressive, more present.",
@@ -1287,7 +1287,7 @@ const todayContent = {
       "<strong>Be direct and present.</strong> Her communication is sharp right now — say what you mean, listen actively. Good conversations happen easiest in this window.",
       "If you've been meaning to do something together — <strong>now is a great time.</strong> Her energy and enthusiasm are high. Match that by showing up with a plan, not just going along.",
       "She's feeling good and it shows. <strong>Be present and engaged.</strong> Compliments and attention land especially well right now. Confidence is attractive — match hers.",
-      "<strong>Be aware: this is peak fertility.</strong> Her body is biologically primed for conception right now. Whatever your plans are around pregnancy, this is the window to be most intentional about them.",
+      "<strong>Calendar estimate only; do not use for contraception.</strong> This estimated window does not establish safe days or confirm ovulation.",
       "Her desire for connection — emotional and physical — <strong>is at its highest.</strong> Show up fully. Half-presence gets noticed more right now because she's so dialed in.",
       "<strong>Don't coast.</strong> It's easy to be lazy when she's in a good mood — but this is actually the best time to invest in the relationship. The effort you put in now gets remembered during the harder phases.",
     ],
@@ -1548,7 +1548,7 @@ function renderDashboard(status, data) {
   // Phase banner (suppress when paused)
   if (status.phase_label && !data.paused) {
     let subMsg = '';
-    if (status.phase === 'fertile') subMsg = 'high conception risk — be careful';
+    if (status.phase === 'fertile') subMsg = 'Calendar estimate only; do not use for contraception.';
     else if (status.phase === 'pms') subMsg = 'extra patience goes a long way';
     else if (status.phase === 'late') subMsg = getLateReassurance(daysLate, data);
     html += `
@@ -1662,8 +1662,8 @@ function renderDashboard(status, data) {
 
   // Timeline
   const events = [
-    { label: 'Fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
-    { label: 'Ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
+    { label: 'Estimated fertile window', date: status.fertile_start, days: status.days_to_fertile, end: status.fertile_end },
+    { label: 'Estimated ovulation', date: status.ovulation_day, days: status.days_to_ovulation },
     { label: 'PMS starts', date: status.pms_start, days: status.days_to_pms },
   ];
   if (status.tension_alert) {
@@ -2145,10 +2145,7 @@ async function scheduleNotifications() {
   }
 
   // Fertile window start
-  scheduleAt(preds.fertileStart, 'Fertile window begins', 'High conception risk starts today. Be intentional.');
-
-  // Fertile window end
-  scheduleAt(addDays(preds.fertileEnd, 1), 'Fertile window ended', 'Fertile window has passed. Ovulation is behind you.');
+  scheduleAt(preds.fertileStart, 'Estimated fertile window', 'Calendar estimate only; do not use for contraception.');
 
   // PMS start
   scheduleAt(preds.pmsStart, 'PMS window begins', 'Patience and small gestures go a long way this week.');
