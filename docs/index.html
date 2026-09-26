@@ -344,10 +344,8 @@
   .heat-cell[data-level="4"] { background: var(--yellow); color: #111; }
   .heat-cell.no-coverage { background: transparent; border-style: dashed; color: var(--text-dim); }
   .heat-cell[aria-pressed="true"], .heat-cell:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
-  .heat-controls { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; }
-  .heat-controls button { min-height: 44px; padding: 8px; }
-  .heat-controls button:disabled { opacity: .4; cursor: default; }
   .heat-cell.zero-events { color: var(--text-dim); background: transparent; }
+  .heat-cell.is-today { border-color: #8b7541; box-shadow: inset 0 0 0 1px #8b754155; }
   .heat-mode { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); font: inherit; font-size: 11px; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
   .today-btn.heat-history-btn { margin-bottom: 8px; }
   .today-card.heat-details { margin-top: 0; margin-bottom: 0; font-size: 11px; line-height: 1.7; }
@@ -1059,8 +1057,8 @@ function getTensionAnalysis(data) {
   const start = periods[periods.length - 1];
   const current = start ? { start, length: daysBetween(parseDate(start), parseDate(today)) + 1 } : null;
   return {
-    cycles, current, eventDates, averageLength: getAutoCycleLength(data),
-    maxDay: Math.max(28, current ? current.length : 0, ...cycles.map(c => c.length)),
+    cycles, current, eventDates,
+    maxDay: Math.max(28, getAutoCycleLength(data), current ? current.length : 0, ...cycles.map(c => c.length)),
     unmapped: tensions.filter(d => !start || d < periods[0]),
   };
 }
@@ -1078,28 +1076,12 @@ function getTensionDay(analysis, day) {
     currentDate, currentRecorded: !!currentDate && analysis.eventDates.has(currentDate) };
 }
 
-let tensionPage = null;
 let tensionSelectedDay = null;
 let tensionDetailsOpen = false;
 let tensionMode = null;
-let tensionAverageLength = null;
-function getTensionRanges(analysis) {
-  const average = analysis.averageLength;
-  const ranges = [];
-  for (let last = average; last > 0; last -= 14) ranges.unshift({ first: Math.max(1, last - 13), last });
-  for (let first = average + 1; first <= analysis.maxDay; first += 14) ranges.push({ first, last: Math.min(first + 13, analysis.maxDay) });
-  return ranges;
-}
 
 function renderTensionMap(analysis) {
-  const ranges = getTensionRanges(analysis);
-  if (tensionPage === null || tensionAverageLength !== analysis.averageLength) {
-    tensionPage = ranges.findIndex(r => r.last === analysis.averageLength);
-    tensionAverageLength = analysis.averageLength;
-    tensionSelectedDay = null;
-  }
-  tensionPage = Math.max(0, Math.min(tensionPage, ranges.length - 1));
-  const { first, last } = ranges[tensionPage];
+  const first = 1, last = analysis.maxDay;
   if (tensionSelectedDay !== null && (tensionSelectedDay < first || tensionSelectedDay > last)) tensionSelectedDay = null;
   const selected = tensionSelectedDay ?? first;
   if (tensionMode === null) tensionMode = analysis.cycles.length ? 'completed' : 'current';
@@ -1110,10 +1092,10 @@ function renderTensionMap(analysis) {
       <option value="completed" ${!current ? 'selected' : ''}>completed cycles (${analysis.cycles.length})</option>
       <option value="current" ${current ? 'selected' : ''}>current cycle</option>
     </select>
-    <div class="heat-controls"><button class="backup-btn" data-tension-page="${tensionPage - 1}" ${tensionPage === 0 ? 'disabled' : ''}>previous</button><span>Days ${first}–${last}</span><button class="backup-btn" data-tension-page="${tensionPage + 1}" ${tensionPage === ranges.length - 1 ? 'disabled' : ''}>next</button></div>
     <div class="heat-grid" aria-label="${current ? 'Current cycle' : 'Completed cycles'}">`;
   for (let day = first; day <= last; day++) {
     const cell = getTensionDay(analysis, day);
+    const isToday = day === analysis.current?.length;
     const coverage = current ? !!cell.currentDate : cell.eligible > 0;
     const events = current ? Number(cell.currentRecorded) : cell.events;
     const level = current ? (events ? 4 : 0) : (cell.rate ? Math.ceil(cell.rate * 4) : 0);
@@ -1121,7 +1103,7 @@ function renderTensionMap(analysis) {
       ? (!coverage ? 'day not reached' : events ? 'event recorded' : 'no event recorded')
       : (coverage ? `${events} events across ${cell.eligible} completed cycles` : 'no completed-cycle coverage');
     const value = !coverage ? '—' : current ? (events ? '●' : '0') : `${events}/${cell.eligible}`;
-    html += `<button class="heat-cell ${!coverage ? 'no-coverage' : !events ? 'zero-events' : ''}" data-tension-day="${day}" data-level="${level}" aria-pressed="${day === tensionSelectedDay}" aria-label="Day ${day}: ${label}">${day}<small>${value}</small></button>`;
+    html += `<button class="heat-cell ${isToday ? 'is-today ' : ''}${!coverage ? 'no-coverage' : !events ? 'zero-events' : ''}" data-tension-day="${day}" data-level="${level}" aria-pressed="${day === tensionSelectedDay}" ${isToday ? 'aria-current="date"' : ''} aria-label="Day ${day}${isToday ? ' (today)' : ''}: ${label}">${day}<small>${value}</small></button>`;
   }
   html += `</div><p class="heat-note">${current ? '● event recorded · 0 no event recorded · — day not reached' : 'events / completed cycles · — no coverage'}</p>`;
   html += `<button class="today-btn heat-history-btn${tensionDetailsOpen ? ' open' : ''}" id="tension-details-toggle" aria-expanded="${tensionDetailsOpen}" aria-controls="tension-day-details"><span>day details — day ${selected}</span><span class="today-arrow" aria-hidden="true">&#9654;</span></button>`;
@@ -1159,9 +1141,6 @@ function bindTensionMap() {
       render();
       document.querySelector(`[data-tension-day="${tensionSelectedDay}"]`)?.focus({ preventScroll: true });
     });
-  });
-  document.querySelectorAll('[data-tension-page]').forEach(button => {
-    button.addEventListener('click', () => { tensionPage = Number(button.dataset.tensionPage); render(); });
   });
 }
 

@@ -17,14 +17,9 @@ function boot(t, data, plugin) {
 }
 const summary=(w)=>w.getTensionAnalysis(w.loadData());
 function selectDay(w,day) {
-  for(let n=0;n<100;n++) {
-    const button=w.document.querySelector(`[data-tension-day="${day}"]`);
-    if(button){button.click();return;}
-    const first=Number(w.document.querySelector('[data-tension-day]').dataset.tensionDay);
-    const buttons=w.document.querySelectorAll('[data-tension-page]');
-    const next=buttons[day<first?0:1]; assert.equal(next.disabled,false);next.click();
-  }
-  assert.fail('Day was not reachable');
+  const button=w.document.querySelector(`[data-tension-day="${day}"]`);
+  assert.ok(button, `Day ${day} is visible in the full grid`);
+  button.click();
 }
 function details(w) {if(w.document.querySelector('#tension-details-toggle').getAttribute('aria-expanded')==='false')w.document.querySelector('#tension-details-toggle').click();}
 function mode(w,value) {const select=w.document.querySelector('#tension-mode');select.value=value;select.dispatchEvent(new w.Event('change'));}
@@ -117,15 +112,21 @@ test('native startup cancels previously pending tension alerts and schedules no 
 });
 
 
-test('default is the last fourteen days of the average, with all earlier/later days accessible',t=>{
-  for(const [periods,first,last] of [[['2026-08-01','2026-08-29'],15,28],[['2026-08-01','2026-08-31'],17,30]]) {
+test('full grid shows every cycle day without pagination and marks today in both views',t=>{
+  for(const periods of [['2026-08-01','2026-08-29'],['2026-07-01','2026-08-15','2026-09-15']]) {
     const w=boot(t,{periods,tensions:[]});w.switchView('manage');
-    const cells=w.document.querySelectorAll('[data-tension-day]');
-    assert.equal(cells.length,14);assert.equal(Number(cells[0].dataset.tensionDay),first);assert.equal(Number(cells[13].dataset.tensionDay),last);
-    const ranges=w.getTensionRanges(summary(w));
-    const all=Array.from(ranges).flatMap(r=>Array.from({length:r.last-r.first+1},(_,i)=>r.first+i));
-    assert.deepEqual(all,Array.from({length:summary(w).maxDay},(_,i)=>i+1));
-    selectDay(w,1);assert.ok(w.document.querySelector('[data-tension-day="1"]'));
+    const a=summary(w);
+    const cells=Array.from(w.document.querySelectorAll('[data-tension-day]'));
+    assert.equal(w.document.querySelectorAll('.heat-grid').length,1);
+    assert.deepEqual(cells.map(c=>Number(c.dataset.tensionDay)),Array.from({length:a.maxDay},(_,i)=>i+1));
+    assert.equal(w.document.querySelector('[data-tension-page]'),null);
+    for(const view of ['completed','current']) {
+      mode(w,view);
+      const today=w.document.querySelectorAll('.heat-cell[aria-current="date"]');
+      assert.equal(today.length,1);
+      assert.equal(Number(today[0].dataset.tensionDay),a.current.length);
+      assert.ok(today[0].classList.contains('is-today'));
+    }
   }
 });
 
