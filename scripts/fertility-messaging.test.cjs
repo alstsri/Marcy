@@ -27,6 +27,8 @@ test('fertility banner and timeline clearly label estimates', t => {
   assert.equal(w.document.querySelector('.phase-banner .phase-sub'), null);
   assert.equal(w.document.querySelector('.timeline-title').textContent, 'Upcoming estimates');
   assert.equal(w.document.querySelector('.timeline p').textContent, 'Timing is estimated. Do not use for contraception.');
+  assert.equal(w.document.querySelector('.timeline').lastElementChild, w.document.querySelector('.timeline p'));
+  assert.ok(w.document.querySelector('.timeline p').previousElementSibling.classList.contains('timeline-row'));
   const labels = [...w.document.querySelectorAll('.tl-event')].map(el => el.textContent);
   assert.ok(labels.includes('Fertile window'));
   assert.ok(labels.includes('Ovulation'));

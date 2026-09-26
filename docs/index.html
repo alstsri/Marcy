@@ -1671,7 +1671,7 @@ function renderDashboard(status, data) {
   events.push({ label: 'Next period', date: status.next_period, days: status.days_to_period });
   events.sort((a, b) => a.days - b.days);
 
-  html += `<div class="timeline"><div class="timeline-title">Upcoming estimates</div><p class="heat-note" style="font-size:11px;line-height:1.7;color:var(--text-dim);margin:10px 0">Timing is estimated. Do not use for contraception.</p>`;
+  html += `<div class="timeline"><div class="timeline-title">Upcoming estimates</div>`;
   for (const ev of events) {
     let cd;
     if (ev.end && ev.days < 0) {
@@ -1692,7 +1692,7 @@ function renderDashboard(status, data) {
       </div>
     `;
   }
-  html += `</div>`;
+  html += `<p class="timeline-note" style="font-size:11px;line-height:1.7;color:var(--text-dim);margin:16px 0 0">Timing is estimated. Do not use for contraception.</p></div>`;
 
   return html;
 }
