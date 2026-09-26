@@ -49,6 +49,7 @@ test('startup replaces old alerts without scheduling a fertile-window-ended noti
   let resolveScheduled;
   const completed = new Promise(resolve => { resolveScheduled = resolve; });
   boot(t, '01', {
+    checkPermissions: async () => ({display:'granted'}),
     requestPermissions: async () => ({display:'granted'}),
     getPending: async () => ({notifications:[{id:99,title:'Fertile window ended'}]}),
     cancel: async pending => { cancelled.push(...pending.notifications); },

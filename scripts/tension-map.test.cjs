@@ -108,6 +108,7 @@ test('long intervals remain visible instead of silently discarding irregular cyc
 test('native startup cancels previously pending tension alerts and schedules no new ones',async t=>{
   let scheduled=[],cancelled=[];let done;const complete=new Promise(resolve=>done=resolve);
   boot(t,{periods:['2026-09-20'],tensions:['2026-09-21']},{
+    checkPermissions:async()=>({display:'granted'}),
     requestPermissions:async()=>({display:'granted'}),
     getPending:async()=>({notifications:[{id:3,title:'Peak tension day'}]}),
     cancel:async pending=>{cancelled=pending.notifications;},

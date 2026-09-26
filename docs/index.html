@@ -848,6 +848,7 @@ function loadData() {
 
 function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  scheduleNotifications();
 }
 
 // ── Export / Import ─────────────────────────────────────────────
@@ -2104,47 +2105,48 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── Local Notifications ─────────────────────────────────────────
-async function scheduleNotifications() {
-  if (!window.Capacitor || !window.Capacitor.Plugins.LocalNotifications) return;
-  const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+let notificationQueue = Promise.resolve();
+let notificationRevision = 0;
+let notificationPermissionRequested = false;
 
-  const perm = await LocalNotifications.requestPermissions();
-  if (perm.display !== 'granted') return;
+function scheduleNotifications() {
+  const plugin = window.Capacitor?.Plugins?.LocalNotifications;
+  if (!plugin) return Promise.resolve();
+  const revision = ++notificationRevision;
+  // Serialize plugin operations so a slow, older schedule cannot overwrite a newer one.
+  notificationQueue = notificationQueue.then(async () => {
+    if (revision !== notificationRevision) return;
+    // Cancel before checking permission or pause: old reminders must still be removed.
+    const pending = await plugin.getPending();
+    if (pending.notifications.length) await plugin.cancel(pending);
+    if (revision !== notificationRevision) return;
+    const data = loadData();
+    if (data.paused || !data.periods.length) return;
 
-  // Cancel existing scheduled notifications
-  const pending = await LocalNotifications.getPending();
-  if (pending.notifications.length > 0) {
-    await LocalNotifications.cancel(pending);
-  }
-
-  const data = loadData();
-  if (data.paused || data.periods.length === 0) return;
-
-  const preds = getPredictions(data);
-  if (!preds) return;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const notifications = [];
-  let id = 1;
-
-  function scheduleAt(date, title, body) {
-    const d = new Date(date);
-    d.setHours(9, 0, 0, 0); // 9 AM
-    if (d > today) {
-      notifications.push({ id: id++, title, body, schedule: { at: d }, sound: 'default' });
+    let perm = await plugin.checkPermissions();
+    if (revision !== notificationRevision) return;
+    if ((perm.display === 'prompt' || perm.display === 'prompt-with-rationale') && !notificationPermissionRequested) {
+      notificationPermissionRequested = true;
+      perm = await plugin.requestPermissions();
     }
-  }
-
-  // Fertile window start
-  scheduleAt(preds.fertileStart, 'Estimated fertile window', 'Calendar estimate only; do not use for contraception.');
-
-  // PMS start
-  scheduleAt(preds.pmsStart, 'Estimated PMS window', 'Patience and small gestures go a long way this week.');
-
-  if (notifications.length > 0) {
-    await LocalNotifications.schedule({ notifications });
-  }
+    if (revision !== notificationRevision || perm.display !== 'granted') return;
+    const preds = getPredictions(data);
+    if (!preds) return;
+    const now = new Date();
+    const notifications = [];
+    function scheduleAt(id, date, title, body) {
+      const at = new Date(date);
+      at.setHours(9, 0, 0, 0);
+      if (at > now) notifications.push({ id, title, body, schedule: { at }, sound: 'default' });
+    }
+    scheduleAt(1, preds.fertileStart, 'Estimated fertile window', 'Calendar estimate only; do not use for contraception.');
+    scheduleAt(2, preds.pmsStart, 'Estimated PMS window', 'Patience and small gestures go a long way this week.');
+    if (notifications.length) await plugin.schedule({ notifications });
+  }).catch(() => {
+    // Keep the queue usable after a plugin error; stored records are already saved.
+    toast('could not update reminders — reopen the app to retry', true);
+  });
+  return notificationQueue;
 }
 
 scheduleNotifications();
