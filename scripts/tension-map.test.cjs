@@ -179,3 +179,18 @@ test('earlier events wrap around the average cycle and appear only on their esti
   const updated=summary(w);assert.equal(w.getTensionDay(updated,28).events,1);
   assert.deepEqual(Array.from(w.getTensionDay(updated,28).estimatedDates),['2026-07-03']);
 });
+
+
+test('fixed heatmap bands distinguish 2/6 from 3/6 and preserve percentage boundaries',t=>{
+  for(const [count,eventCounts,expected] of [[6,[0,1,2,3],[0,2,3,4]],[20,[0,1,2,3,5,6,8,9],[0,1,1,2,2,3,3,4]]]) {
+    const dateAt=offset=>new Date(Date.UTC(2025,0,1+offset)).toISOString().slice(0,10);
+    const periods=Array.from({length:count+1},(_,i)=>dateAt(i*28));
+    const tensions=eventCounts.flatMap((events,day)=>Array.from({length:events},(_,cycle)=>dateAt(cycle*28+day)));
+    const w=boot(t,{periods,tensions});w.switchView('manage');
+    eventCounts.forEach((events,index)=>{
+      const cell=w.document.querySelector(`[data-tension-day="${index+1}"]`);
+      assert.equal(Number(cell.dataset.level),expected[index]);
+      assert.equal(cell.querySelector('small').textContent,`${events}/${count}`);
+    });
+  }
+});

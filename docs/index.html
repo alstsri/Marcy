@@ -1117,7 +1117,8 @@ function renderTensionMap(analysis) {
     const isToday = day === analysis.current?.length;
     const coverage = current ? !!cell.currentDate : cell.eligible > 0;
     const events = current ? Number(cell.currentRecorded) : cell.events;
-    const level = current ? (events ? 4 : 0) : (cell.rate ? Math.ceil(cell.rate * 4) : 0);
+    // Fixed bands: >0–10%, >10–25%, >25–40%, and >40%.
+    const level = current ? (events ? 4 : 0) : (!cell.rate ? 0 : cell.rate <= 0.10 ? 1 : cell.rate <= 0.25 ? 2 : cell.rate <= 0.40 ? 3 : 4);
     const label = current
       ? (!coverage ? 'day not reached' : events ? 'event recorded' : 'no event recorded')
       : (coverage ? `${events} events across ${cell.eligible} completed cycles` : 'no completed-cycle coverage');
