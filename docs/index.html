@@ -1212,6 +1212,7 @@ function getStatus() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
+  const daysLate = Math.max(0, daysBetween(preds.nextPeriod, today));
   let phase = 'normal', phaseLabel = '';
   if (preds.fertileStart <= today && today <= preds.fertileEnd) {
     phase = 'fertile'; phaseLabel = 'ESTIMATED FERTILE WINDOW';
@@ -1220,7 +1221,6 @@ function getStatus() {
   } else if (preds.pmsStart <= today && today < preds.nextPeriod) {
     phase = 'pms'; phaseLabel = 'ESTIMATED PMS WINDOW';
   } else if (today >= preds.nextPeriod) {
-    const daysLate = daysBetween(preds.nextPeriod, today);
     phase = 'late';
     if (daysLate <= 2) phaseLabel = 'PERIOD EXPECTED';
     else if (daysLate <= 14) phaseLabel = `PERIOD ${daysLate}D LATE`;
@@ -1232,7 +1232,7 @@ function getStatus() {
   const daysToOvulation = daysBetween(today, preds.ovulationDay);
   const tensionData = getTensionAnalysis(data);
   return {
-    empty: false, today: isoDate(today), cycle_day: cycleDay, cycle_length: preds.cycleLength,
+    empty: false, today: isoDate(today), cycle_day: cycleDay, cycle_length: preds.cycleLength, days_late: daysLate,
     cycle_type: getCycleLengthType(data), last_period: isoDate(preds.lastPeriod),
     next_period: isoDate(preds.nextPeriod), fertile_start: isoDate(preds.fertileStart),
     fertile_end: isoDate(preds.fertileEnd), ovulation_day: isoDate(preds.ovulationDay),
@@ -1622,6 +1622,8 @@ function validLogDate(value) {
 function limitLogDate(input) {
   if (!input) return;
   input.max = isoDate(new Date());
+  input.addEventListener('input', () => { input.dataset.userEdited = 'true'; });
+  input.addEventListener('change', () => { input.dataset.userEdited = 'true'; });
   input.addEventListener('focus', () => { input.max = isoDate(new Date()); });
 }
 
@@ -1709,7 +1711,7 @@ function skipEmail() {
 // ── Dashboard View ──────────────────────────────────────────────
 function renderDashboard(status, data) {
   let html = '';
-  const daysLate = status.phase === 'late' ? status.cycle_day - status.cycle_length : 0;
+  const daysLate = status.days_late;
 
   // Phase banner (suppress when paused)
   if (status.phase_label && !data.paused) {
@@ -1726,7 +1728,6 @@ function renderDashboard(status, data) {
 
   // Late period prompt
   if (status.phase === 'late' && !data.paused) {
-    const daysLateForPrompt = status.cycle_day - status.cycle_length;
     html += `
       <div class="late-prompt">
         <div class="late-prompt-top">
@@ -1734,7 +1735,7 @@ function renderDashboard(status, data) {
           <button class="late-prompt-btn" onclick="switchView('manage');setTimeout(()=>document.getElementById('log-date')?.scrollIntoView({behavior:'smooth'}),100)">log</button>
         </div>
         ${data.periods.length < 3 ? '<div class="late-prompt-extra">predictions are still calibrating — this may not actually be late</div>' : ''}
-        ${daysLateForPrompt >= 14 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        ${daysLate >= 14 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
           <div class="late-prompt-top">
             <div class="late-prompt-text">not expecting ${pnPoss()} period? pause tracking until ${pnPoss()} cycle resumes.</div>
             <button class="late-prompt-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid var(--border)" onclick="pauseTracking()">pause</button>
@@ -1781,8 +1782,8 @@ function renderDashboard(status, data) {
             stroke-dashoffset="${offset}"/>
         </svg>
         <div class="ring-text">
-          <div class="ring-day">${status.phase === 'late' ? '+' + daysLate : status.cycle_day}</div>
-          <div class="ring-label">${status.phase === 'late' ? 'past due' : 'of ' + status.cycle_length}</div>
+          <div class="ring-day">${status.phase === 'late' ? (daysLate ? '+' + daysLate : '0') : status.cycle_day}</div>
+          <div class="ring-label">${status.phase === 'late' ? (daysLate ? 'past due' : 'due today') : 'of ' + status.cycle_length}</div>
         </div>
       </div>
       <div class="ring-meta">
@@ -1992,7 +1993,11 @@ function renderManage(status, data, history) {
 }
 
 // ── Main Render ─────────────────────────────────────────────────
+let renderedDay = null;
+let dayRefreshTimer;
+
 function render() {
+  renderedDay = isoDate(new Date());
   let data;
   try { data = loadData(); }
   catch { renderRecovery(); return; }
@@ -2269,8 +2274,49 @@ function scheduleNotifications() {
   return notificationQueue;
 }
 
+function refreshCalendarDate() {
+  if (!document.hidden && isoDate(new Date()) !== renderedDay) {
+    const active = document.activeElement;
+    const focusedId = active?.id;
+    const selection = active && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
+    const drafts = [...document.querySelectorAll('#content input[id]:not([type="file"])')].filter(input =>
+      input.type !== 'date' || input.dataset.userEdited === 'true' || input.value !== renderedDay
+    ).map(input => ({ id: input.id, value: input.value, checked: input.checked, edited: input.dataset.userEdited }));
+    const x = window.scrollX, y = window.scrollY;
+    render();
+    for (const draft of drafts) {
+      const input = document.getElementById(draft.id);
+      if (!input) continue;
+      input.value = draft.value;
+      input.checked = draft.checked;
+      if (draft.edited) input.dataset.userEdited = draft.edited;
+    }
+    const focused = focusedId && document.getElementById(focusedId);
+    if (focused) {
+      focused.focus({ preventScroll: true });
+      if (selection) focused.setSelectionRange(...selection);
+    }
+    window.scrollTo(x, y);
+    scheduleNotifications();
+  }
+  scheduleDayRefresh();
+}
+
+function scheduleDayRefresh() {
+  clearTimeout(dayRefreshTimer);
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setDate(midnight.getDate() + 1);
+  midnight.setHours(0, 0, 0, 0);
+  dayRefreshTimer = setTimeout(refreshCalendarDate, midnight - now + 50);
+}
+
+document.addEventListener('visibilitychange', refreshCalendarDate);
+window.addEventListener('focus', refreshCalendarDate);
+window.addEventListener('pageshow', refreshCalendarDate);
 scheduleNotifications();
 render();
+scheduleDayRefresh();
 </script>
 </body>
 </html>
