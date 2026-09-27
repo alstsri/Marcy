@@ -23,7 +23,7 @@ function details(w,day=2,view='completed'){
 function confirm(w){w.document.querySelector('#confirm-yes').click();}
 
 test('completed, current and unmapped tension events are deletable with cancel, date confirmation and Undo',t=>{
- for(const [date,day,view] of [['2026-08-02',2,'completed'],['2026-09-02',5,'current'],['2026-07-30',2,'completed']]){
+ for(const [date,day,view] of [['2026-08-02',2,'completed'],['2026-09-02',5,'current'],['2026-07-30',27,'completed']]){
   const {w}=boot(t);details(w,day,view);const original=w.localStorage.getItem('marcy_data');
   const button=w.document.querySelector(`[data-delete-tension="${date}"]`);assert.ok(button);assert.equal(button.getAttribute('onclick'),null);
   button.click();assert.match(w.document.querySelector('#confirm-root').textContent,new RegExp(date));

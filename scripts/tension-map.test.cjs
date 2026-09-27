@@ -32,8 +32,10 @@ test('existing event dates map to completed/current cycles and prehistory withou
   assert.equal(w.getTensionDay(a,28).events,1);
   assert.equal(w.getTensionDay(a,1).currentRecorded,true);
   assert.equal(w.getTensionDay(a,27).currentRecorded,true);
-  assert.deepEqual(Array.from(a.unmapped),['2026-07-30']);
+  assert.deepEqual(Array.from(a.unmapped),[]);
+  assert.deepEqual(Array.from(w.getTensionDay(a,27).estimatedDates),['2026-07-30']);
   w.switchView('manage');
+  selectDay(w,27);
   details(w);
   assert.ok(w.document.querySelector('.tension-map').textContent.includes('2026-07-30'));
   assert.equal(w.localStorage.getItem('marcy_data'),raw);
@@ -157,4 +159,23 @@ test('details toggle reuses today-card styling and remains optional when selecti
   assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-16: event recorded/);
   w.document.querySelector('#tension-details-toggle').click();
   assert.equal(w.document.querySelector('#tension-day-details').hidden,true);
+});
+
+
+test('earlier events wrap around the average cycle and appear only on their estimated day',t=>{
+  const w=boot(t,{periods:['2026-08-01','2026-08-29'],tensions:['2026-07-31','2026-07-04','2026-07-03']});
+  const raw=w.localStorage.getItem('marcy_data');const a=summary(w);
+  assert.deepEqual(Array.from(w.getTensionDay(a,28).estimatedDates),['2026-07-03','2026-07-31']);
+  assert.deepEqual(Array.from(w.getTensionDay(a,1).estimatedDates),['2026-07-04']);
+  for(let day=1;day<=28;day++){assert.equal(w.getTensionDay(a,day).events,0);assert.equal(w.getTensionDay(a,day).eligible,1);}
+  w.switchView('manage');selectDay(w,28);details(w);
+  assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-31\*/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/Estimated day of cycle; logged prior to first recorded period/);
+  assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-07-04/);
+  assert.equal(w.document.querySelector('[data-tension-day="28"] small').textContent,'0/1');
+  selectDay(w,2);assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-07-|Estimated day of cycle/);
+  assert.equal(w.localStorage.getItem('marcy_data'),raw);
+  const data=w.loadData();data.periods.unshift('2026-07-04');w.saveData(data);
+  const updated=summary(w);assert.equal(w.getTensionDay(updated,28).events,1);
+  assert.deepEqual(Array.from(w.getTensionDay(updated,28).estimatedDates),['2026-07-03']);
 });
