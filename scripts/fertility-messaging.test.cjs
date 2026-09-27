@@ -70,3 +70,21 @@ test('PMS banner identifies its estimate outside the timeline', t => {
   assert.equal(w.document.querySelector('.phase-label').textContent, 'ESTIMATED PMS WINDOW');
   assert.equal(w.document.querySelectorAll('.timeline p').length, 1);
 });
+
+
+test('estimated ovulation banner takes priority only on its predicted date', t => {
+  for (const day of ['10','11','14','15','16','17']) {
+    const w = boot(t, day);
+    const status = w.getStatus();
+    if (day === '15') {
+      assert.equal(w.document.querySelector('.phase-label').textContent, 'ESTIMATED OVULATION');
+      assert.equal(status.phase, 'fertile');
+    } else if (['11','14','16'].includes(day)) {
+      assert.equal(w.document.querySelector('.phase-label').textContent, 'ESTIMATED FERTILE WINDOW');
+      assert.equal(status.phase, 'fertile');
+    } else {
+      assert.equal(status.phase, 'normal');
+      assert.doesNotMatch(w.document.querySelector('#content').textContent, /ESTIMATED OVULATION|ESTIMATED FERTILE WINDOW/);
+    }
+  }
+});

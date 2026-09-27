@@ -1274,10 +1274,10 @@ function getStatus() {
   const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
   const daysLate = Math.max(0, daysBetween(preds.nextPeriod, today));
   let phase = 'normal', phaseLabel = '';
-  if (preds.fertileStart <= today && today <= preds.fertileEnd) {
-    phase = 'fertile'; phaseLabel = 'ESTIMATED FERTILE WINDOW';
-  } else if (today.getTime() === preds.ovulationDay.getTime()) {
+  if (today.getTime() === preds.ovulationDay.getTime()) {
     phase = 'fertile'; phaseLabel = 'ESTIMATED OVULATION';
+  } else if (preds.fertileStart <= today && today <= preds.fertileEnd) {
+    phase = 'fertile'; phaseLabel = 'ESTIMATED FERTILE WINDOW';
   } else if (preds.pmsStart <= today && today < preds.nextPeriod) {
     phase = 'pms'; phaseLabel = 'ESTIMATED PMS WINDOW';
   } else if (today >= preds.nextPeriod) {
