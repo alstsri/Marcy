@@ -1008,12 +1008,26 @@ function importData(file) {
 }
 
 // ── Confirm Dialog ──────────────────────────────────────────────
+let confirmationState = null;
+
+function restoreConfirmationFocus(target, force = false) {
+  if (!force && document.activeElement !== document.body && document.activeElement?.isConnected) return;
+  let destination = target?.isConnected ? target : (target?.id ? document.getElementById(target.id) : null);
+  if (!destination) {
+    destination = document.getElementById('content');
+    destination.setAttribute('tabindex', '-1');
+  }
+  destination.focus({ preventScroll: true });
+}
+
 function showConfirm(msg, onConfirm, confirmLabel = 'delete', confirmClass = 'confirm-delete') {
+  if (confirmationState) dismissConfirm();
   const root = document.getElementById('confirm-root');
+  const trigger = document.activeElement;
   root.innerHTML = `
     <div class="confirm-overlay" onclick="if(event.target===this)dismissConfirm()">
-      <div class="confirm-box">
-        <div class="confirm-msg">${msg}</div>
+      <div class="confirm-box" role="dialog" aria-modal="true" aria-label="Confirm action" aria-describedby="confirm-message" tabindex="-1">
+        <div class="confirm-msg" id="confirm-message">${msg}</div>
         <div class="confirm-actions">
           <button class="confirm-cancel" onclick="dismissConfirm()">cancel</button>
           <button class="${confirmClass}" id="confirm-yes">${confirmLabel}</button>
@@ -1021,14 +1035,49 @@ function showConfirm(msg, onConfirm, confirmLabel = 'delete', confirmClass = 'co
       </div>
     </div>
   `;
+  const dialog = root.querySelector('[role="dialog"]');
+  const cancel = root.querySelector('.confirm-cancel');
+  const background = [...root.parentElement.children].filter(element => element !== root).map(element => ({
+    element, inert: element.hasAttribute('inert'), hidden: element.getAttribute('aria-hidden'),
+  }));
+  const keydown = event => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); dismissConfirm(); return; }
+    if (event.key !== 'Tab') return;
+    const buttons = [...dialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]')].filter(element => !element.hidden && element.type !== 'hidden');
+    const first = buttons[0] || dialog, last = buttons[buttons.length - 1] || dialog;
+    if (event.shiftKey && (document.activeElement === first || !buttons.includes(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !buttons.includes(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  };
+  const focusin = event => { if (!dialog.contains(event.target)) cancel.focus({ preventScroll: true }); };
+  confirmationState = { trigger, background, keydown, focusin };
+  cancel.focus({ preventScroll: true });
+  for (const { element } of background) { element.setAttribute('inert', ''); element.setAttribute('aria-hidden', 'true'); }
+  document.addEventListener('keydown', keydown);
+  document.addEventListener('focusin', focusin);
   document.getElementById('confirm-yes').addEventListener('click', () => {
     dismissConfirm();
-    onConfirm();
+    const result = onConfirm();
+    restoreConfirmationFocus(trigger);
+    if (result?.then) result.then(() => restoreConfirmationFocus(trigger));
   });
 }
 
 function dismissConfirm() {
+  const state = confirmationState;
+  confirmationState = null;
+  if (state) {
+    document.removeEventListener('keydown', state.keydown);
+    document.removeEventListener('focusin', state.focusin);
+    for (const { element, inert, hidden } of state.background) {
+      if (!inert) element.removeAttribute('inert');
+      if (hidden === null) element.removeAttribute('aria-hidden'); else element.setAttribute('aria-hidden', hidden);
+    }
+  }
   document.getElementById('confirm-root').innerHTML = '';
+  if (state) restoreConfirmationFocus(state.trigger, true);
 }
 
 // ── Cycle Math ──────────────────────────────────────────────────
