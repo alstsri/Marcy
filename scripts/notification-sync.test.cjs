@@ -99,3 +99,10 @@ test('web saves work without a native notification plugin',async t=>{
  const {w,state}=boot(t,{native:false});w.saveData({...base(),paused:true});await w.scheduleNotifications();
  assert.equal(w.loadData().paused,true);assert.equal(state.calls.length,0);
 });
+
+test('undoing last period deletion restores its reminders',async t=>{
+ const {w,state}=boot(t,{data:{...base(),periods:['2026-09-20']}});await settled(w);const original=dates(state);
+ w.switchView('manage');w.confirmDel('2026-09-20');w.document.querySelector('#confirm-yes').click();await settled(w);
+ assert.equal(state.pending.length,0);w.document.querySelector('.toast-undo').click();await settled(w);
+ assert.deepEqual(dates(state),original);
+});

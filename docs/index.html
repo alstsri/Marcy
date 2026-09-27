@@ -285,6 +285,8 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+  .toast-undo { pointer-events: auto; background: none; border: none; color: var(--yellow); font: inherit; text-decoration: underline; min-height: 44px; padding: 0 10px; margin-left: 8px; cursor: pointer; }
+  .heat-details .history-del { min-width: 44px; min-height: 44px; }
   .toast.error { border-color: var(--red); color: var(--red); }
 
   /* History */
@@ -802,7 +804,7 @@
     <div class="empty">loading...</div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div id="confirm-root"></div>
 
   <nav class="bottom-nav" id="bottom-nav" style="display:none">
@@ -851,6 +853,8 @@ function loadData() {
 
 function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  undoButton?.remove();
+  undoButton = null;
   scheduleNotifications();
 }
 
@@ -1063,7 +1067,7 @@ function getTensionAnalysis(data) {
   return {
     cycles, current, eventDates,
     maxDay: Math.max(28, getAutoCycleLength(data), current ? current.length : 0, ...cycles.map(c => c.length)),
-    unmapped: tensions.filter(d => !start || d < periods[0]),
+    unmapped: [...new Set(data.tensions || [])].filter(d => !valid(d) || !start || d < periods[0]),
   };
 }
 
@@ -1083,6 +1087,10 @@ function getTensionDay(analysis, day) {
 let tensionSelectedDay = null;
 let tensionDetailsOpen = false;
 let tensionMode = null;
+
+function tensionDeleteButton(date) {
+  return `<button class="history-del" data-delete-tension="${escapeHTML(date)}" aria-label="Delete tension event ${escapeHTML(date)}">&times;</button>`;
+}
 
 function renderTensionMap(analysis) {
   const first = 1, last = analysis.maxDay;
@@ -1115,21 +1123,24 @@ function renderTensionMap(analysis) {
   html += `<div class="today-card heat-details" id="tension-day-details" ${tensionDetailsOpen ? '' : 'hidden'}>`;
   if (tensionDetailsOpen) {
     if (current) {
-      html += `<strong>Current cycle · day ${selected}</strong><br>${!detail.currentDate ? 'This day has not been reached.' : detail.currentRecorded ? `${escapeHTML(detail.currentDate)} — event recorded` : 'No events logged for this cycle day.'}<p class="heat-note">Current observations are not included in the completed-cycle comparison.</p>`;
+      html += `<strong>Current cycle · day ${selected}</strong><br>${!detail.currentDate ? 'This day has not been reached.' : detail.currentRecorded ? `${escapeHTML(detail.currentDate)} — event recorded ${tensionDeleteButton(detail.currentDate)}` : 'No events logged for this cycle day.'}<p class="heat-note">Current observations are not included in the completed-cycle comparison.</p>`;
     } else {
       html += `<strong>Day ${selected}</strong><br>${detail.events} events across ${detail.eligible} completed cycles that reached this day.`;
-      if (detail.events) html += '<ul>' + detail.observations.filter(o => o.recorded).map(o => `<li>${escapeHTML(o.date)}: event recorded (cycle started ${escapeHTML(o.start)})</li>`).join('') + '</ul>';
+      if (detail.events) html += '<ul>' + detail.observations.filter(o => o.recorded).map(o => `<li>${escapeHTML(o.date)}: event recorded (cycle started ${escapeHTML(o.start)}) ${tensionDeleteButton(o.date)}</li>`).join('') + '</ul>';
       else html += '<br>No events logged for this cycle day.';
       if (!detail.eligible) html += '<br>No completed-cycle coverage for this day.';
       html += '<p class="heat-note">Day 1 is a logged period start. Completed cycles are intervals between logged starts; missing entries can distort the comparison. Brighter color means a larger recorded share, not a prediction.</p>';
     }
     html += '<p class="heat-note">No event recorded does not mean no tension.</p>';
-    if (analysis.unmapped.length) html += `<p class="heat-note">Events before the first logged period remain in your log but cannot be assigned a cycle day: ${analysis.unmapped.map(escapeHTML).join(', ')}.</p>`;
+    if (analysis.unmapped.length) html += `<p class="heat-note">Events that cannot be assigned a cycle day: </p><ul>${analysis.unmapped.map(date => `<li>${escapeHTML(date)} ${tensionDeleteButton(date)}</li>`).join('')}</ul>`;
   }
   return html + '</div></section>';
 }
 
 function bindTensionMap() {
+  document.querySelectorAll('[data-delete-tension]').forEach(button => {
+    button.addEventListener('click', () => confirmDelTension(button.dataset.deleteTension));
+  });
   document.getElementById('tension-mode')?.addEventListener('change', event => {
     tensionMode = event.target.value;
     render();
@@ -1152,7 +1163,7 @@ function bindTensionMap() {
 function getStatus() {
   const data = loadData();
   const preds = getPredictions(data);
-  if (!preds) return { empty: true };
+  if (!preds) return { empty: true, tension_analysis: getTensionAnalysis(data) };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cycleDay = daysBetween(preds.lastPeriod, today) + 1;
@@ -1210,11 +1221,37 @@ function escapeHTML(value) {
 function pn() { const d = loadData(); return escapeHTML(d.partner_name || 'she'); }
 function pnPoss() { const d = loadData(); return escapeHTML(d.partner_name ? d.partner_name + "'s" : 'her'); }
 
-function toast(msg, isError) {
+let toastTimer;
+let undoButton = null;
+function toast(msg, isError, previousData) {
+  clearTimeout(toastTimer);
   const t = $('#toast');
   t.textContent = msg;
+  undoButton = null;
   t.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(() => t.className = 'toast', 2400);
+  if (previousData) {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    const button = document.createElement('button');
+    button.className = 'toast-undo';
+    button.textContent = 'undo';
+    undoButton = button;
+    button.addEventListener('click', () => {
+      // A later save or another tab must never be overwritten by an old Undo.
+      if (localStorage.getItem(STORAGE_KEY) !== savedState) {
+        toast('data changed — undo unavailable', true);
+        return;
+      }
+      saveData(previousData);
+      render();
+      toast('undone');
+    }, { once: true });
+    t.appendChild(button);
+  }
+  toastTimer = setTimeout(() => {
+    undoButton?.remove();
+    undoButton = null;
+    t.className = 'toast';
+  }, previousData ? 10000 : 2400);
 }
 
 function fmtDate(iso) {
@@ -1792,7 +1829,7 @@ function renderManage(status, data, history) {
           <div class="history-row">
             <span class="history-date">${fmtDate(e.date)}${periodDur ? ` <span style="color:var(--text-muted)">(${periodDur})</span>` : ''}</span>
             <span class="history-len">${lenStr}</span>
-            <button class="history-del" data-delete-period="${escapeHTML(e.date)}">&times;</button>
+            <button class="history-del" aria-label="Delete period ${escapeHTML(e.date)}" data-delete-period="${escapeHTML(e.date)}">&times;</button>
           </div>
         `;
       }
@@ -1917,7 +1954,7 @@ function render() {
   const status = getStatus();
   const history = getHistory();
 
-  if (status.empty) {
+  if (status.empty && currentView === 'dashboard') {
     $('#content').innerHTML = `
       <div class="empty">no data yet.<br>log a period to get started.</div>
       <div class="log-section">
@@ -1963,6 +2000,7 @@ function bindForms() {
       if (!val) return;
       const data = loadData();
       if (data.periods.includes(val)) { toast(`${val} already logged`, true); return; }
+      const previousData = structuredClone(data);
       const prevCount = data.periods.length;
       const wasPaused = data.paused;
       data.periods.push(val);
@@ -1971,12 +2009,12 @@ function bindForms() {
       saveData(data);
       // First real cycle acknowledgment
       if (wasPaused) {
-        toast('tracking resumed');
+        toast('tracking resumed', false, previousData);
       } else if (prevCount === 1) {
         const cycleLen = getCycleLength(data);
-        toast(`first cycle: ${cycleLen} days — marcy is learning`);
+        toast(`first cycle: ${cycleLen} days — marcy is learning`, false, previousData);
       } else {
-        toast(`logged ${fmtDate(val)}`);
+        toast(`logged ${fmtDate(val)}`, false, previousData);
       }
       currentView = 'dashboard';
       render();
@@ -1992,10 +2030,11 @@ function bindForms() {
       if (!val) return;
       const data = loadData();
       if (data.tensions.includes(val)) { toast(`${val} already logged`, true); return; }
+      const previousData = structuredClone(data);
       data.tensions.push(val);
       data.tensions.sort();
       saveData(data);
-      toast(`logged tension ${fmtDate(val)}`);
+      toast(`logged tension ${fmtDate(val)}`, false, previousData);
       currentView = 'manage';
       render();
     });
@@ -2090,21 +2129,26 @@ function bindSettings() {
 }
 
 function confirmDel(dateStr) {
-  showConfirm(`Remove period ${fmtDate(dateStr)}?<br><span style="font-size:11px;color:var(--text-dim)">This will affect cycle calculations.</span>`, () => {
+  showConfirm(`Remove period ${escapeHTML(dateStr)}?<br><span style="font-size:11px;color:var(--text-dim)">This will affect cycle calculations.</span>`, () => {
     const data = loadData();
+    if (!data.periods.includes(dateStr)) return;
+    const previousData = structuredClone(data);
     data.periods = data.periods.filter(p => p !== dateStr);
+    delete data.period_ends[dateStr];
     saveData(data);
-    toast(`removed ${fmtDate(dateStr)}`);
+    toast(`removed ${fmtDate(dateStr)}`, false, previousData);
     render();
   });
 }
 
 function confirmDelTension(dateStr) {
-  showConfirm(`Remove tension event ${fmtDate(dateStr)}?`, () => {
+  showConfirm(`Remove tension event ${escapeHTML(dateStr)}?`, () => {
     const data = loadData();
+    if (!data.tensions.includes(dateStr)) return;
+    const previousData = structuredClone(data);
     data.tensions = data.tensions.filter(t => t !== dateStr);
     saveData(data);
-    toast(`removed tension ${fmtDate(dateStr)}`);
+    toast(`removed tension ${fmtDate(dateStr)}`, false, previousData);
     render();
   });
 }
