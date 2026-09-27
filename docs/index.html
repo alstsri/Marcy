@@ -821,6 +821,9 @@ const FORMSPREE_URL = 'https://formspree.io/f/mdayreqr';
 
 // ── Data Layer (localStorage) ───────────────────────────────────
 const STORAGE_KEY = 'marcy_data';
+let dataGeneration = 0;
+let eraseInProgress = false;
+let emailController = null;
 const DEFAULT_DATA = {
   periods: [],
   tensions: [],
@@ -857,6 +860,7 @@ function loadData() {
 }
 
 function saveData(data, { restore = false } = {}) {
+  if (eraseInProgress) { toast('erasing data…'); return false; }
   try {
     const next = JSON.stringify(data);
     parseStoredData(next);
@@ -975,10 +979,12 @@ function validateBackup(input, allowFutureDates = false) {
 }
 
 function importData(file) {
+  const generation = dataGeneration;
   if (file.size > MAX_BACKUP_BYTES) { toast('backup file is too large', true); return; }
   const reader = new FileReader();
   reader.onerror = () => toast('could not read backup file', true);
   reader.onload = (e) => {
+    if (generation !== dataGeneration || eraseInProgress) return;
     let data;
     try {
       data = validateBackup(JSON.parse(e.target.result));
@@ -990,6 +996,7 @@ function importData(file) {
     showConfirm(
       'This will replace your current history.<br><span style="font-size:11px;color:var(--text-dim)">Your period dates, tension events, and settings will be replaced with the contents of this backup.</span>',
       () => {
+        if (generation !== dataGeneration || eraseInProgress) return;
         if (!saveData(data, { restore: true })) return;
         toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
         render();
@@ -1664,12 +1671,14 @@ function bindOnboarding() {
 let emailSubmissionPending = false;
 let emailDraft = '';
 async function submitEmail(email) {
-  if (emailSubmissionPending) return false;
+  if (emailSubmissionPending || eraseInProgress) return false;
+  const generation = dataGeneration;
   emailSubmissionPending = true;
   emailDraft = email;
   const button = document.getElementById('settings-save-email');
   if (button) { button.disabled = true; button.textContent = 'sending…'; }
   const controller = new AbortController();
+  emailController = controller;
   const timeout = setTimeout(() => controller.abort(), 15000);
   let accepted = false;
   try {
@@ -1680,6 +1689,7 @@ async function submitEmail(email) {
       body: JSON.stringify({ email }),
       signal: controller.signal,
     });
+    if (generation !== dataGeneration) return false;
     if (!response.ok) throw new Error('Email signup rejected');
     // Read fresh records so edits made while waiting for the server are preserved.
     const data = loadData();
@@ -1692,10 +1702,14 @@ async function submitEmail(email) {
     // Keep the draft available in Settings for a retry; do not mark signup complete.
   } finally {
     clearTimeout(timeout);
-    emailSubmissionPending = false;
-    const retryButton = document.getElementById('settings-save-email');
+    if (generation === dataGeneration) {
+      emailSubmissionPending = false;
+      emailController = null;
+    }
+    const retryButton = generation === dataGeneration && document.getElementById('settings-save-email');
     if (retryButton) { retryButton.disabled = false; retryButton.textContent = 'sign up'; }
   }
+  if (generation !== dataGeneration) return false;
   render();
   toast(accepted ? "thanks — we'll keep you posted" : "couldn't sign up — try again in settings", !accepted);
   return accepted;
@@ -1969,6 +1983,7 @@ function renderManage(status, data, history) {
         <button class="backup-btn" onclick="document.getElementById('import-file').click()">import backup</button>
         <input type="file" accept=".json" class="backup-file" id="import-file">
       </div>
+      <button class="terms-toggle" id="erase-data" style="margin-top:16px;color:var(--red)">erase Marcy data</button>
     </div>
   `;
 
@@ -2116,6 +2131,7 @@ function bindForms() {
 }
 
 function bindSettings() {
+  document.getElementById('erase-data')?.addEventListener('click', confirmEraseData);
   const displayedData = loadData();
   const emailInput = document.getElementById('settings-email');
   if (emailInput) emailInput.value = emailDraft;
@@ -2221,6 +2237,55 @@ function confirmDelTension(dateStr) {
   });
 }
 
+function confirmEraseData() {
+  showConfirm('Erase all Marcy data on this device?<br><span style="font-size:11px;color:var(--text-dim)">History, settings, and recovery copies will be removed. This cannot be undone. Downloaded backups and email signup are unaffected.</span><br><button class="backup-btn" id="erase-export" style="margin-top:16px">export backup first</button>', eraseMarcyData, 'erase data');
+  document.getElementById('erase-export').addEventListener('click', exportData);
+}
+
+async function eraseMarcyData() {
+  if (eraseInProgress) return false;
+  eraseInProgress = true;
+  ++dataGeneration;
+  ++notificationRevision;
+  emailController?.abort();
+  emailController = null;
+  emailSubmissionPending = false;
+  try {
+    const plugin = window.Capacitor?.Plugins?.LocalNotifications;
+    const cancellation = notificationQueue.then(async () => {
+      if (!plugin) return;
+      const pending = await plugin.getPending();
+      if (pending.notifications.length) await plugin.cancel(pending);
+    });
+    notificationQueue = cancellation.catch(() => {});
+    try { await cancellation; }
+    catch { toast('could not cancel reminders — nothing erased', true); return false; }
+    const recoveryKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(STORAGE_KEY + '_recovery_')) recoveryKeys.push(key);
+    }
+    for (const key of recoveryKeys) localStorage.removeItem(key);
+    localStorage.removeItem(STORAGE_KEY);
+    clearTimeout(toastTimer);
+    undoButton?.remove();
+    undoButton = null;
+    emailDraft = '';
+    currentView = 'dashboard';
+    todayCardOpen = termsOpen = periodHistoryOpen = tensionDetailsOpen = false;
+    tensionSelectedDay = tensionMode = null;
+    dismissConfirm();
+    render();
+    toast('Marcy data erased');
+    return true;
+  } catch {
+    toast('could not erase all data — try again', true);
+    return false;
+  } finally {
+    eraseInProgress = false;
+  }
+}
+
 if (window.Capacitor) document.body.classList.add('native-app');
 
 // PWA
@@ -2234,6 +2299,7 @@ let notificationRevision = 0;
 let notificationPermissionRequested = false;
 
 function scheduleNotifications() {
+  if (eraseInProgress) return notificationQueue;
   const plugin = window.Capacitor?.Plugins?.LocalNotifications;
   if (!plugin) return Promise.resolve();
   const revision = ++notificationRevision;
