@@ -1573,14 +1573,26 @@ function renderOnboarding() {
   `;
 }
 
+function validLogDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && isoDate(parseDate(value)) === value && value <= isoDate(new Date());
+}
+
+function limitLogDate(input) {
+  if (!input) return;
+  input.max = isoDate(new Date());
+  input.addEventListener('focus', () => { input.max = isoDate(new Date()); });
+}
+
 function bindOnboarding() {
+  limitLogDate(document.getElementById('onboard-date'));
   const goBtn = document.getElementById('onboard-go');
   const restoreBtn = document.getElementById('onboard-restore');
   const fileInput = document.getElementById('onboard-file');
   if (goBtn) {
     goBtn.addEventListener('click', () => {
       const dateVal = document.getElementById('onboard-date').value;
-      if (!dateVal) { toast('pick a date', true); return; }
+      if (!validLogDate(dateVal)) { toast('choose today or an earlier date', true); return; }
       const cycleVal = document.getElementById('onboard-cycle').value;
       const data = loadData();
       data.periods.push(dateVal);
@@ -1999,9 +2011,10 @@ function bindForms() {
   const logBtn = $('#log-btn');
   if (logInput && logBtn) {
     logInput.value = today;
+    limitLogDate(logInput);
     logBtn.addEventListener('click', () => {
       const val = logInput.value;
-      if (!val) return;
+      if (!validLogDate(val)) { toast('choose today or an earlier date', true); return; }
       const data = loadData();
       if (data.periods.includes(val)) { toast(`${val} already logged`, true); return; }
       const previousData = structuredClone(data);
@@ -2029,9 +2042,10 @@ function bindForms() {
   const tensionBtn = $('#tension-btn');
   if (tensionInput && tensionBtn) {
     tensionInput.value = today;
+    limitLogDate(tensionInput);
     tensionBtn.addEventListener('click', () => {
       const val = tensionInput.value;
-      if (!val) return;
+      if (!validLogDate(val)) { toast('choose today or an earlier date', true); return; }
       const data = loadData();
       if (data.tensions.includes(val)) { toast(`${val} already logged`, true); return; }
       const previousData = structuredClone(data);
