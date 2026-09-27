@@ -1610,7 +1610,7 @@ function confirmPeriodEnd(cycleDay) {
   }
 }
 function shareMarcy() {
-  const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle — what\'s happening, what to expect, and how to show up. Private, local, no accounts.', url: 'https://apps.apple.com/app/marcy/id0000000000' };
+  const shareData = { title: 'Marcy — Cycle Awareness', text: 'Marcy helps you understand her cycle — what\'s happening, what to expect, and how to show up. Private, local, no accounts.', url: 'https://alstsri.github.io/Marcy/' };
   if (navigator.share) { navigator.share(shareData).catch(() => {}); }
   else { navigator.clipboard.writeText(shareData.url).then(() => toast('link copied')).catch(() => toast('could not copy', true)); }
 }
