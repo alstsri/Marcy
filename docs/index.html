@@ -1349,7 +1349,7 @@ function getLateReassurance(daysLate, data) {
   } else if (daysLate <= 14) {
     msg = "pregnancy is a real possibility — a home test can give clarity quickly";
   } else {
-    msg = pnPoss() + " cycle has paused — this is most commonly pregnancy, but could also be hormonal or medical. if " + pn() + " resumes cycling, you can reset tracking below";
+    msg = "More than two weeks past the expected date. If pregnancy is possible, take a test if she hasn’t already. If it’s negative and her period still hasn’t arrived, contact a healthcare professional.";
   }
   if (daysLate <= 10 && data.periods.length < 3) {
     msg += " — marcy is still learning her pattern, so the prediction may simply be off";
