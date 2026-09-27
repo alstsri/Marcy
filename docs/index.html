@@ -698,6 +698,23 @@
   }
   .backup-btn:hover { color: var(--text); border-color: var(--text-dim); }
   .backup-file { display: none; }
+  .fresh-start {
+    display: block;
+    margin-top: 24px;
+    padding: 10px 0;
+    min-height: 44px;
+    background: none;
+    border: none;
+    color: #999;
+    font-family: inherit;
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+  .fresh-start:hover { color: var(--text); }
+  .fresh-start:focus-visible { outline: 1px solid var(--text); outline-offset: 4px; }
+
 
   /* Terms */
   .terms {
@@ -2036,7 +2053,7 @@ function renderManage(status, data, history) {
         <button class="backup-btn" onclick="document.getElementById('import-file').click()">import backup</button>
         <input type="file" accept=".json" class="backup-file" id="import-file" aria-label="Backup file to import">
       </div>
-      <button class="terms-toggle" id="erase-data" style="margin-top:16px;color:var(--red)">erase Marcy data</button>
+      <button class="fresh-start" id="erase-data">fresh start</button>
     </div>
   `;
 
