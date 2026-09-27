@@ -1108,14 +1108,18 @@ function dayOfYear() {
   return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
 }
 
-function getAutoCycleLength(data) {
+function getCycleIntervals(data) {
   const periods = [...data.periods].sort();
-  if (periods.length < 2) return data.settings.default_cycle_length;
   const diffs = [];
   for (let i = 1; i < periods.length; i++) {
     const d = daysBetween(parseDate(periods[i - 1]), parseDate(periods[i]));
     if (d >= 18 && d <= 45) diffs.push(d);
   }
+  return diffs;
+}
+
+function getAutoCycleLength(data) {
+  const diffs = getCycleIntervals(data);
   if (!diffs.length) return data.settings.default_cycle_length;
   if (diffs.length === 1) return diffs[0];
   let weightedSum = 0, totalWeight = 0;
@@ -1134,7 +1138,7 @@ function getCycleLength(data) {
 
 function getCycleLengthType(data) {
   if (data.settings.manual_cycle_length) return 'manual';
-  if (data.periods.length < 2) return 'default';
+  if (!getCycleIntervals(data).length) return 'default';
   return 'calculated';
 }
 

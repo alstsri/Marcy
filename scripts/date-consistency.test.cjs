@@ -53,3 +53,24 @@ test('pageshow refresh preserves onboarding name and email while advancing the u
  assert.equal(w.document.querySelector('#onboard-name').value,'Alex');assert.equal(w.document.querySelector('#onboard-email').value,'draft@example.com');
  assert.equal(w.document.querySelector('#onboard-date').value,'2026-09-29');assert.equal(w.document.querySelector('#onboard-date').max,'2026-09-29');
 });
+
+
+test('cycle label follows usable intervals, including fallback and manual settings',t=>{
+ const {w}=boot(t);
+ const cases=[
+  {periods:['2026-09-01'],length:28,type:'default',label:'28d (est)'},
+  {periods:['2026-07-03','2026-09-01'],length:28,type:'default',label:'28d (est)'},
+  {periods:['2026-08-31','2026-09-01'],length:28,type:'default',label:'28d (est)'},
+  {periods:['2026-07-03','2026-09-01'],defaultLength:30,length:30,type:'default',label:'30d (est)'},
+  {periods:['2026-07-03','2026-09-01'],manual:31,length:31,type:'manual',label:'31d (set)'},
+  {periods:['2026-09-01','2026-08-04','2026-06-05'],length:28,type:'calculated',label:'28d'},
+  {periods:['2026-08-14','2026-09-01'],length:18,type:'calculated',label:'18d'},
+  {periods:['2026-07-18','2026-09-01'],length:45,type:'calculated',label:'45d'},
+ ];
+ for(const c of cases){
+  const data={periods:c.periods,tensions:[],onboarded:true,settings:{default_cycle_length:c.defaultLength||28,manual_cycle_length:c.manual||null}};
+  w.localStorage.setItem('marcy_data',JSON.stringify(data));w.render();
+  const status=w.getStatus();assert.equal(status.cycle_length,c.length);assert.equal(status.cycle_type,c.type);
+  assert.equal(w.document.querySelectorAll('.ring-meta span')[1].textContent.trim(),c.label);
+ }
+});
