@@ -37,7 +37,7 @@ test('existing event dates map to completed/current cycles and prehistory withou
   w.switchView('manage');
   selectDay(w,27);
   details(w);
-  assert.ok(w.document.querySelector('.tension-map').textContent.includes('2026-07-30'));
+  assert.ok(w.document.querySelector('.heat-details time[datetime="2026-07-30"]'));
   assert.equal(w.localStorage.getItem('marcy_data'),raw);
 });
 
@@ -71,7 +71,7 @@ test('one grid defaults to current observations when there are no completed cycl
   assert.equal(w.document.querySelector('[data-tension-day="6"] small').textContent,'—');
   assert.equal(w.document.querySelector('#tension-details-toggle').getAttribute('aria-expanded'),'false');
   details(w);
-  assert.ok(w.document.querySelector('.heat-details').textContent.includes('2026-09-21 — event recorded'));
+  assert.ok(w.document.querySelector('.heat-details time[datetime="2026-09-21"]'));
   mode(w,'completed');
   assert.equal(w.document.querySelectorAll('.heat-grid').length,1);
   assert.equal(w.document.querySelector('[data-tension-day="2"] small').textContent,'—');
@@ -82,16 +82,16 @@ test('day details list only logged dates and show an empty message when no event
   selectDay(w,40);
   const cell=w.document.querySelector('[aria-label="Completed cycles"] [data-tension-day="40"]');
   assert.ok(cell);assert.equal(cell.querySelector('small').textContent,'1/1'); details(w);
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-09: event recorded/);
+  assert.ok(w.document.querySelector('.heat-details time[datetime="2026-08-09"]'));
   selectDay(w,2);
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-02: event recorded/);
-  assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-08-16/);
+  assert.ok(w.document.querySelector('.heat-details time[datetime="2026-07-02"]'));
+  assert.equal(w.document.querySelector('.heat-details time[datetime="2026-08-16"]'),null);
   assert.equal(w.document.querySelectorAll('.heat-details li').length,1);
   selectDay(w,3);
-  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged for this cycle day/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged\./);
   assert.equal(w.document.querySelectorAll('.heat-details li').length,0);
   mode(w,'current');
-  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged for this cycle day/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/No events logged\./);
 });
 
 test('logging tension shows the refreshed map without switching back to dashboard',t=>{
@@ -156,7 +156,7 @@ test('details toggle reuses today-card styling and remains optional when selecti
   details(w);
   assert.equal(w.document.querySelector('#tension-day-details').hidden,false);
   assert.ok(w.document.querySelector('#tension-day-details').classList.contains('today-card'));
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-08-16: event recorded/);
+  assert.ok(w.document.querySelector('.heat-details time[datetime="2026-08-16"]'));
   w.document.querySelector('#tension-details-toggle').click();
   assert.equal(w.document.querySelector('#tension-day-details').hidden,true);
 });
@@ -169,11 +169,11 @@ test('earlier events wrap around the average cycle and appear only on their esti
   assert.deepEqual(Array.from(w.getTensionDay(a,1).estimatedDates),['2026-07-04']);
   for(let day=1;day<=28;day++){assert.equal(w.getTensionDay(a,day).events,0);assert.equal(w.getTensionDay(a,day).eligible,1);}
   w.switchView('manage');selectDay(w,28);details(w);
-  assert.match(w.document.querySelector('.heat-details').textContent,/2026-07-31\*/);
-  assert.match(w.document.querySelector('.heat-details').textContent,/Estimated day of cycle; logged prior to first recorded period/);
-  assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-07-04/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/Jul 31, 2026\*/);
+  assert.match(w.document.querySelector('.heat-details').textContent,/Estimated cycle day \(before first recorded period\)/);
+  assert.equal(w.document.querySelector('.heat-details time[datetime="2026-07-04"]'),null);
   assert.equal(w.document.querySelector('[data-tension-day="28"] small').textContent,'0/1');
-  selectDay(w,2);assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/2026-07-|Estimated day of cycle/);
+  selectDay(w,2);assert.doesNotMatch(w.document.querySelector('.heat-details').textContent,/Jul |Estimated cycle day/);
   assert.equal(w.localStorage.getItem('marcy_data'),raw);
   const data=w.loadData();data.periods.unshift('2026-07-04');w.saveData(data);
   const updated=summary(w);assert.equal(w.getTensionDay(updated,28).events,1);

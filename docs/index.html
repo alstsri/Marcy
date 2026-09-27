@@ -351,7 +351,9 @@
   .heat-mode { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); font: inherit; font-size: 11px; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
   .today-btn.heat-history-btn { margin-bottom: 8px; }
   .today-card.heat-details { margin-top: 0; margin-bottom: 0; font-size: 11px; line-height: 1.7; }
-  .heat-details ul { padding-left: 18px; max-height: 220px; overflow: auto; }
+  .heat-details ul { padding: 0; margin: 0; list-style: none; max-height: 220px; overflow: auto; }
+  .heat-details li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .heat-details time { white-space: nowrap; }
 
   /* Today Card */
   .today-btn {
@@ -1127,21 +1129,13 @@ function renderTensionMap(analysis) {
   const detail = getTensionDay(analysis, selected);
   html += `<div class="today-card heat-details" id="tension-day-details" ${tensionDetailsOpen ? '' : 'hidden'}>`;
   if (tensionDetailsOpen) {
-    if (current) {
-      html += `<strong>Current cycle · day ${selected}</strong><br>${!detail.currentDate ? 'This day has not been reached.' : detail.currentRecorded ? `${escapeHTML(detail.currentDate)} — event recorded ${tensionDeleteButton(detail.currentDate)}` : (detail.estimatedDates.length ? 'No events logged in the current cycle.' : 'No events logged for this cycle day.')}<p class="heat-note">Current observations are not included in the completed-cycle comparison.</p>`;
-    } else {
-      html += `<strong>Day ${selected}</strong><br>${detail.events} events across ${detail.eligible} completed cycles that reached this day.`;
-      if (detail.events) html += '<ul>' + detail.observations.filter(o => o.recorded).map(o => `<li>${escapeHTML(o.date)}: event recorded (cycle started ${escapeHTML(o.start)}) ${tensionDeleteButton(o.date)}</li>`).join('') + '</ul>';
-      else if (!detail.estimatedDates.length) html += '<br>No events logged for this cycle day.';
-      if (!detail.eligible) html += '<br>No completed-cycle coverage for this day.';
-      html += '<p class="heat-note">Day 1 is a logged period start. Completed cycles are intervals between logged starts; missing entries can distort the comparison. Brighter color means a larger recorded share, not a prediction.</p>';
-    }
-    if (detail.estimatedDates.length) {
-      html += '<ul>' + detail.estimatedDates.map(date => `<li>${escapeHTML(date)}*: event recorded ${tensionDeleteButton(date)}</li>`).join('') + '</ul>';
-      html += '<p class="heat-note">* Estimated day of cycle; logged prior to first recorded period. Excluded from chart counts.</p>';
-    }
-    html += '<p class="heat-note">No event recorded does not mean no tension.</p>';
-    if (analysis.unmapped.length) html += `<p class="heat-note">Events that cannot be assigned a cycle day: </p><ul>${analysis.unmapped.map(date => `<li>${escapeHTML(date)} ${tensionDeleteButton(date)}</li>`).join('')}</ul>`;
+    const dates = current ? (detail.currentRecorded ? [detail.currentDate] : []) : detail.observations.filter(o => o.recorded).map(o => o.date);
+    const rows = dates.map(date => ({ date, estimated: false })).concat(detail.estimatedDates.map(date => ({ date, estimated: true })));
+    const eventRow = ({ date, estimated = false }) => `<li><time datetime="${escapeHTML(date)}">${fmtDate(date)}, ${escapeHTML(date.slice(0, 4))}${estimated ? '*' : ''}</time>${tensionDeleteButton(date)}</li>`;
+    if (rows.length) html += '<ul>' + rows.map(eventRow).join('') + '</ul>';
+    else html += current && !detail.currentDate ? 'Day not reached.' : 'No events logged.';
+    if (detail.estimatedDates.length) html += '<p class="heat-note">* Estimated cycle day (before first recorded period).</p>';
+    if (analysis.unmapped.length) html += '<p class="heat-note">Unassigned dates</p><ul>' + analysis.unmapped.map(date => eventRow({ date })).join('') + '</ul>';
   }
   return html + '</div></section>';
 }
