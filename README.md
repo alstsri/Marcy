@@ -1,123 +1,87 @@
-# Marcy - Cycle Tracker
+# Marcy
 
-A simple, private cycle tracker that runs locally on your Mac. No accounts, no cloud — just your data on your machine.
+Marcy is a browser prototype for recording period starts and tension events, viewing cycle estimates, and reading cycle-related guidance. The current app lives in `docs/` and is hosted on [GitHub Pages](https://alstsri.github.io/Marcy/). A Capacitor iOS project is also included for native development.
 
-## What it does
+## Use the browser prototype
 
-- Tracks cycle start dates and calculates average cycle length (starts with 28-day assumption)
-- Predicts **ovulation window** (fertile days) — so you know when to be extra careful
-- Predicts **PMS window** — so you can be prepared and supportive
-- Tracks **tension events** and correlates them to cycle days to predict peak tension dates
-- Sends **macOS notifications** as warnings when key dates approach
-- **Web UI** (Flask) with dark monospace aesthetic — also works as a PWA on iPhone
-- All data stays in a local JSON file
+Open https://alstsri.github.io/Marcy/ in Safari. To keep it on your iPhone home screen, use **Share → Add to Home Screen**. Load the app online first so its service worker can cache the app for offline use.
 
-## Launch
+The app provides:
 
-**Double-click `Marcy.app` on the Desktop.** It starts the server and opens the browser.
+- Period history, cycle-length calculation, and estimated upcoming dates.
+- Tension-event logging and a cycle-day heatmap of recorded history.
+- Expandable daily guidance and history details.
+- Backup export/import, storage-recovery controls, and local data deletion.
 
-First time: macOS will block it. Right-click > Open, or go to System Settings > Privacy & Security > Open Anyway.
+Cycle timing is estimated. Calendar estimates cannot confirm ovulation and must not be used for contraception. The heatmap summarizes logged events; it does not predict arguments or establish their cause.
 
-If the app doesn't work, run manually:
-```bash
-cd /Users/als/Desktop/Marcy
-python3 app.py
-# Then open http://localhost:5050
+## Data and backups
+
+The current app stores history and settings in `localStorage` in the browser or native web view. There is no account or automatic history sync. The old Python app's `data.json` is a separate store and is not read by the browser prototype.
+
+Use **export backup** on the Data page to keep a copy before clearing website data, changing browsers, or moving devices. Backups contain personal history: choose where to save and share them carefully. Importing a backup replaces the current history after confirmation. Local data deletion does not delete downloaded backups.
+
+Different browser contexts or website addresses may have separate storage. A local development preview will not automatically show the history from GitHub Pages.
+
+Optional product-update signup sends the submitted email address to Formspree. GitHub Pages serves the website and receives website requests. See the app's [privacy page](https://alstsri.github.io/Marcy/privacy.html) and [support page](https://alstsri.github.io/Marcy/support.html) for further information.
+
+## Local browser preview
+
+From the repository root, serve only the website directory:
+
+```sh
+python3 -m http.server 8080 --bind 127.0.0.1 --directory docs
 ```
 
-## Key dates (current cycle)
+Open http://127.0.0.1:8080. Python is only serving static files here; Flask and npm dependencies are not needed for this preview. Keep the port consistent if you want to retain the same development storage.
 
-| Phase | Timing (relative to next period) | What it means |
-|---|---|---|
-| **Fertile window** | ~Days 10–16 of cycle (ovulation ~Day 14) | Highest chance of conception |
-| **PMS window** | ~7 days before next period | Mood/energy shifts may occur |
-| **Peak tension** | Predicted from logged tension events | Historically worst day for arguments |
+## Development and tests
 
-## Current data
+Capacitor CLI 8 requires Node.js 22 or newer. A clean install, the test suite, and the iOS asset-copy step were verified with Node.js 24.19.0. The repository does not currently pin a Node version; check `node --version` before installing.
 
-- **First period logged:** 2026-03-23
-- **First tension logged:** 2026-03-21 (2 days before period)
-- **Cycle length:** 28 days (default — will auto-calculate after 2nd period is logged)
-- **Next key dates:** Fertile Apr 2–7, Ovulation Apr 6, PMS Apr 13, Period ~Apr 20, Peak tension ~Apr 18
+From the repository root:
 
-## CLI (still works alongside the web app)
-
-```bash
-python3 marcy.py log 2026-04-20     # Log a period start date
-python3 marcy.py status              # Show current predictions
-python3 marcy.py history             # Show cycle history
-python3 marcy.py notify              # Trigger notification check
-python3 marcy.py install             # Set up daily 9am macOS notifications
-python3 marcy.py uninstall           # Remove daily notifications
+```sh
+npm ci
+npm test
+npm audit
 ```
 
-## Web app
+`npm ci` installs the versions recorded in `package-lock.json`. Commit that lockfile when updating dependencies. Tests use Node's test runner and jsdom to check app behavior, backup handling, storage recovery, notifications, accessibility interactions, and offline caching.
 
-```bash
-python3 app.py                       # Start server on http://localhost:5050
+Automated checks do not replace testing on an actual iPhone, including VoiceOver, offline startup, and native notification delivery.
+
+## Native iOS development
+
+`capacitor.config.json` points Capacitor at `docs/`. With dependencies installed, copy web changes into the existing iOS project using:
+
+```sh
+npx cap copy ios
 ```
 
-Features:
-- Cycle day ring with progress
-- Phase banners (fertile = red, PMS = orange, tension = yellow)
-- Timeline of upcoming events with countdowns
-- Log periods and tension events
-- Tension heatmap showing pattern of days-before-period
-- Delete entries from history
-- PWA — add to iPhone home screen from Safari for app-like experience
+When native dependencies or plugins change, use `npx cap sync ios`, then open the project with `npx cap open ios`. Building and signing require an appropriately configured Xcode installation. A full native build and device release have not been validated by the current automated checks.
 
-## iPhone access (same WiFi)
-
-Find your Mac's IP:
-```bash
-python3 -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('8.8.8.8',80)); print(s.getsockname()[0])"
-```
-Open `http://<ip>:5050` on phone. Tap Share > Add to Home Screen for PWA install.
-
-## Notifications (launchd)
-
-`python3 marcy.py install` sets up a daily check at 9am via launchd (`com.marcy.notify`). Notifications fire for:
-- Fertile window approaching / active
-- PMS window starting / active
-- Ovulation day
-- Period expected today
-- (Tension alerts show in the web UI only, for now)
+Scheduled reminders use Capacitor's local-notifications plugin in the native app. The hosted browser prototype does not provide those native reminders.
 
 ## Project structure
 
-```
+```text
 Marcy/
-  app.py           # Flask web server + API
-  marcy.py         # Core logic + CLI
-  data.json        # All tracked data (periods, tensions, settings)
-  templates/
-    index.html     # Web UI (single page, inline CSS/JS)
-  static/
-    manifest.json  # PWA manifest
-    sw.js          # Service worker for offline/PWA
-    icon.svg       # App icon (SVG)
-  README.md        # This file
-Marcy.app/         # macOS .app launcher (on Desktop, next to Marcy/)
+  docs/                    Current static browser app and policy/support pages
+    index.html             App UI, styles, and logic
+    sw.js                  Offline cache
+    manifest.json          Home-screen app metadata
+  scripts/                 Automated tests and development/screenshot helpers
+  ios/                     Capacitor iOS project
+  capacitor.config.json    Native app configuration; webDir is docs
+  package.json             Dependencies and test command
+  package-lock.json        Locked dependency versions
+  app.py                   Legacy Flask app
+  marcy.py                 Legacy Python CLI and cycle logic
+  templates/               Legacy Flask UI
+  static/                  Legacy Flask assets
 ```
 
-## Data format
+## Legacy Python prototype
 
-```json
-{
-  "periods": ["2026-03-23"],
-  "tensions": ["2026-03-21"],
-  "settings": {
-    "default_cycle_length": 28,
-    "notify_fertile_days_before": 2,
-    "notify_pms_days_before": 1
-  }
-}
-```
-
-## TODO / future ideas
-
-- Deploy to a server for access from anywhere (not just same WiFi)
-- Native iOS app (SwiftUI) with push notifications
-- Track more symptoms (mood, energy, cravings)
-- Cycle length trend visualization
-- Export data
+`app.py`, `marcy.py`, `templates/`, and `static/` belong to an earlier implementation. They are retained for reference, are not the GitHub Pages app, and do not share its browser history or recent fixes. Their Flask setup, desktop launcher, and launchd notification workflow are not the supported setup for this prototype. Do not use the old same-Wi-Fi/server instructions to deploy the current app.
