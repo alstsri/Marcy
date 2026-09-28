@@ -836,7 +836,7 @@
 // ── Config ──────────────────────────────────────────────────────
 const FORMSPREE_URL = 'https://formspree.io/f/mdayreqr';
 
-// ── Data Layer (localStorage) ───────────────────────────────────
+// ── Data Layer (browser localStorage / native Preferences) ───────────────────────────────────
 const STORAGE_KEY = 'marcy_data';
 let dataGeneration = 0;
 let eraseInProgress = false;
@@ -869,15 +869,130 @@ window.addEventListener('error', event => {
   }
 });
 
+const nativeStorage = window.Capacitor?.isNativePlatform?.() === true;
+const MIGRATION_KEY = 'marcy_storage_v1';
+let storageReady = !nativeStorage;
+let nativeRecords = new Map();
+let nativeSavePending = null;
+let storageInitialization = null;
+
+function preferences() {
+  const plugin = window.Capacitor?.Plugins?.Preferences;
+  if (!plugin) throw new StorageReadError('Native storage unavailable');
+  return plugin;
+}
+function ownsRecord(key) {
+  return key === STORAGE_KEY || key?.startsWith(STORAGE_KEY + '_recovery_');
+}
+function legacyKeys() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (ownsRecord(key)) keys.push(key);
+  }
+  return keys;
+}
+async function writeVerified(plugin, key, value) {
+  await plugin.set({ key, value });
+  if ((await plugin.get({ key })).value !== value) throw new Error('Storage verification failed');
+}
+async function initializeNativeStorage() {
+  storageReady = false;
+  const plugin = preferences();
+  let raw = (await plugin.get({ key: STORAGE_KEY })).value;
+  const marker = (await plugin.get({ key: MIGRATION_KEY })).value;
+  if (marker !== '1') {
+    if (raw === null) {
+      // Copy recovery records before the primary record. Preserve even malformed bytes.
+      const keys = legacyKeys().sort((a, b) => (a === STORAGE_KEY) - (b === STORAGE_KEY));
+      for (const key of keys) {
+        const value = localStorage.getItem(key);
+        if (value !== null) await writeVerified(plugin, key, value);
+      }
+      raw = (await plugin.get({ key: STORAGE_KEY })).value;
+    }
+    await writeVerified(plugin, MIGRATION_KEY, '1');
+  }
+  const records = new Map();
+  for (const key of (await plugin.keys()).keys.filter(ownsRecord)) {
+    records.set(key, (await plugin.get({ key })).value);
+  }
+  records.set(STORAGE_KEY, raw);
+  nativeRecords = records;
+  storageReady = true;
+  // The marker prevents a stale browser copy from ever becoming authoritative again.
+  // Cleanup can be retried next launch if the web view temporarily denies access.
+  try { for (const key of legacyKeys()) localStorage.removeItem(key); } catch {}
+}
+function readStoredRaw() {
+  if (!nativeStorage) return localStorage.getItem(STORAGE_KEY);
+  if (!storageReady) throw new StorageReadError('Native storage unavailable');
+  return nativeRecords.get(STORAGE_KEY) ?? null;
+}
+function persistData(data, onSaved, options) {
+  const generation = dataGeneration;
+  const saved = saveData(data, options);
+  const finish = ok => {
+    if (!ok || generation !== dataGeneration || eraseInProgress) return false;
+    return onSaved();
+  };
+  return saved?.then ? saved.then(finish) : finish(saved);
+}
+function saveNativeData(data, { restore = false } = {}) {
+  if (!storageReady || nativeSavePending) {
+    toast('could not save — try again', true);
+    return false;
+  }
+  const next = JSON.stringify(data);
+  try { parseStoredData(next); } catch { toast('could not save — invalid data', true); return false; }
+  const generation = dataGeneration;
+  const elements = ['content', 'bottom-nav', 'toast'].map(id => document.getElementById(id));
+  const oldInert = elements.map(el => el.hasAttribute('inert'));
+  elements.forEach(el => el.setAttribute('inert', ''));
+  nativeSavePending = Promise.resolve().then(async () => {
+    try {
+      const plugin = preferences();
+      const previous = readStoredRaw();
+      if (previous !== null) {
+        try { parseStoredData(previous); }
+        catch {
+          if (!restore) { renderRecovery(); return false; }
+          const key = STORAGE_KEY + '_recovery_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+          await writeVerified(plugin, key, previous);
+          nativeRecords.set(key, previous);
+        }
+      }
+      await writeVerified(plugin, STORAGE_KEY, next);
+      nativeRecords.set(STORAGE_KEY, next);
+      if (generation !== dataGeneration || eraseInProgress) return false;
+      undoButton?.remove();
+      undoButton = null;
+      scheduleNotifications();
+      return true;
+    } catch {
+      // A rejected bridge call may already have written. Re-read before further edits.
+      storageReady = false;
+      renderRecovery();
+      toast('could not confirm save — try again to reload saved data', true);
+      return false;
+    } finally {
+      elements.forEach((el, i) => { if (!oldInert[i]) el.removeAttribute('inert'); });
+      nativeSavePending = null;
+    }
+  });
+  return nativeSavePending;
+}
+
 function loadData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStoredRaw();
     return raw === null ? structuredClone(DEFAULT_DATA) : parseStoredData(raw);
   } catch { throw new StorageReadError('Saved data unavailable'); }
 }
 
 function saveData(data, { restore = false } = {}) {
   if (eraseInProgress) { toast('erasing data…'); return false; }
+  if (nativeStorage) return saveNativeData(data, { restore });
   try {
     const next = JSON.stringify(data);
     parseStoredData(next);
@@ -910,12 +1025,12 @@ function renderRecovery() {
     <div class="backup-row"><button class="backup-btn" id="recovery-download">download saved data</button><button class="backup-btn" id="recovery-import">restore backup</button><button class="backup-btn" id="recovery-retry">try again</button></div>
     <input type="file" accept=".json" class="backup-file" id="recovery-file" aria-label="Backup file to restore">
     <div class="footer"><a href="support.html">support</a></div>`;
-  $('#recovery-retry').addEventListener('click', () => render());
+  $('#recovery-retry').addEventListener('click', () => nativeStorage ? startApp() : render());
   $('#recovery-import').addEventListener('click', () => $('#recovery-file').click());
   $('#recovery-file').addEventListener('change', event => { if (event.target.files[0]) importData(event.target.files[0]); });
   $('#recovery-download').addEventListener('click', () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = readStoredRaw();
       if (raw === null) throw new Error('No saved data');
       const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
       const link = document.createElement('a');
@@ -1014,9 +1129,10 @@ function importData(file) {
       'This will replace your current history.<br><span style="font-size:11px;color:var(--text-dim)">Your period dates, tension events, and settings will be replaced with the contents of this backup.</span>',
       () => {
         if (generation !== dataGeneration || eraseInProgress) return;
-        if (!saveData(data, { restore: true })) return;
-        toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
-        render();
+        return persistData(data, () => {
+          toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
+          render();
+        }, { restore: true });
       },
       'replace history'
     );
@@ -1352,20 +1468,21 @@ function toast(msg, isError, previousData) {
   undoButton = null;
   t.className = 'toast show' + (isError ? ' error' : '');
   if (previousData) {
-    const savedState = localStorage.getItem(STORAGE_KEY);
+    const savedState = readStoredRaw();
     const button = document.createElement('button');
     button.className = 'toast-undo';
     button.textContent = 'undo';
     undoButton = button;
     button.addEventListener('click', () => {
       // A later save or another tab must never be overwritten by an old Undo.
-      if (localStorage.getItem(STORAGE_KEY) !== savedState) {
+      if (readStoredRaw() !== savedState) {
         toast('data changed — undo unavailable', true);
         return;
       }
-      if (!saveData(previousData)) return;
-      render();
-      toast('undone');
+      return persistData(previousData, () => {
+        render();
+        toast('undone');
+      });
     }, { once: true });
     t.appendChild(button);
   }
@@ -1605,17 +1722,22 @@ function todayButton(status) {
 function toggleToday() { todayCardOpen = !todayCardOpen; render(); }
 function toggleTerms() { termsOpen = !termsOpen; render(); }
 function togglePeriodHistory() { periodHistoryOpen = !periodHistoryOpen; render(); }
-function pauseTracking() { const data = loadData(); data.paused = true; if (!saveData(data)) return; toast('tracking paused'); render(); }
+function pauseTracking() {
+  const data = loadData();
+  data.paused = true;
+  return persistData(data, () => { toast('tracking paused'); render(); });
+}
 function logPeriodEnd() {
   const data = loadData();
   const periods = [...data.periods].sort();
   const lastPeriod = periods[periods.length - 1];
   const today = isoDate(new Date());
   data.period_ends[lastPeriod] = today;
-  if (!saveData(data)) return;
-  const duration = daysBetween(parseDate(lastPeriod), parseDate(today)) + 1;
-  toast(`period logged: ${duration} days`);
-  render();
+  return persistData(data, () => {
+    const duration = daysBetween(parseDate(lastPeriod), parseDate(today)) + 1;
+    toast(`period logged: ${duration} days`);
+    render();
+  });
 }
 
 function confirmPeriodEnd(cycleDay) {
@@ -1725,10 +1847,11 @@ function bindOnboarding() {
       const nameVal = document.getElementById('onboard-name').value.trim();
       if (nameVal) data.partner_name = nameVal;
       const emailVal = document.getElementById('onboard-email').value.trim();
-      if (!saveData(data)) return;
-      toast('welcome to marcy');
-      render();
-      if (emailVal && emailVal.includes('@')) submitEmail(emailVal);
+      return persistData(data, () => {
+        toast('welcome to marcy');
+        render();
+        if (emailVal && emailVal.includes('@')) submitEmail(emailVal);
+      });
     });
   }
   if (restoreBtn && fileInput) {
@@ -1761,11 +1884,14 @@ async function submitEmail(email) {
     });
     if (generation !== dataGeneration) return false;
     if (!response.ok) throw new Error('Email signup rejected');
-    // Read fresh records so edits made while waiting for the server are preserved.
+    // Wait for a native save before taking a fresh snapshot for the email update.
+    if (nativeStorage && nativeSavePending) await nativeSavePending;
+    if (generation !== dataGeneration || eraseInProgress) return false;
     const data = loadData();
     data.email = email;
     data.email_prompted = true;
-    if (!saveData(data)) return false;
+    const saved = saveData(data);
+    if (!(saved?.then ? await saved : saved)) return false;
     emailDraft = '';
     accepted = true;
   } catch {
@@ -1788,8 +1914,9 @@ async function submitEmail(email) {
 function skipEmail() {
   const data = loadData();
   data.email_prompted = true;
-  if (!saveData(data)) return;
-  render();
+  return persistData(data, () => {
+    render();
+  });
 }
 
 // ── Dashboard View ──────────────────────────────────────────────
@@ -2158,18 +2285,19 @@ function bindForms() {
       data.periods.push(val);
       data.periods.sort();
       data.paused = false;
-      if (!saveData(data)) return;
-      // First real cycle acknowledgment
-      if (wasPaused) {
-        toast('tracking resumed', false, previousData);
-      } else if (prevCount === 1) {
-        const cycleLen = getCycleLength(data);
-        toast(`first cycle: ${cycleLen} days — marcy is learning`, false, previousData);
-      } else {
-        toast(`logged ${fmtDate(val)}`, false, previousData);
-      }
-      currentView = 'dashboard';
-      render();
+      return persistData(data, () => {
+        // First real cycle acknowledgment
+        if (wasPaused) {
+          toast('tracking resumed', false, previousData);
+        } else if (prevCount === 1) {
+          const cycleLen = getCycleLength(data);
+          toast(`first cycle: ${cycleLen} days — marcy is learning`, false, previousData);
+        } else {
+          toast(`logged ${fmtDate(val)}`, false, previousData);
+        }
+        currentView = 'dashboard';
+        render();
+      });
     });
   }
 
@@ -2186,10 +2314,11 @@ function bindForms() {
       const previousData = structuredClone(data);
       data.tensions.push(val);
       data.tensions.sort();
-      if (!saveData(data)) return;
-      toast(`logged tension ${fmtDate(val)}`, false, previousData);
-      currentView = 'manage';
-      render();
+      return persistData(data, () => {
+        toast(`logged tension ${fmtDate(val)}`, false, previousData);
+        currentView = 'manage';
+        render();
+      });
     });
   }
 
@@ -2216,10 +2345,11 @@ function bindSettings() {
       const data = loadData();
       if (!val) {
         data.settings.manual_cycle_length = null;
-        if (!saveData(data)) return;
-        toast('using auto-calculation');
-        render();
-        return;
+        return persistData(data, () => {
+          toast('using auto-calculation');
+          render();
+          return;
+        });
       }
       const n = parseInt(val);
       if (n < 18 || n > 45) { toast('cycle length must be 18-45 days', true); return; }
@@ -2227,9 +2357,10 @@ function bindSettings() {
       const diffPct = Math.abs(n - auto) / auto;
       const apply = () => {
         data.settings.manual_cycle_length = n;
-        if (!saveData(data)) return;
-        toast(`cycle length set to ${n}d`);
-        render();
+        return persistData(data, () => {
+          toast(`cycle length set to ${n}d`);
+          render();
+        });
       };
       if (diffPct > 0.2) {
         showConfirm(
@@ -2249,9 +2380,10 @@ function bindSettings() {
     clearBtn.addEventListener('click', () => {
       const data = loadData();
       data.settings.manual_cycle_length = null;
-      if (!saveData(data)) return;
-      toast('using auto-calculation');
-      render();
+      return persistData(data, () => {
+        toast('using auto-calculation');
+        render();
+      });
     });
   }
 
@@ -2262,9 +2394,10 @@ function bindSettings() {
       const val = document.getElementById('settings-name').value.trim();
       const data = loadData();
       data.partner_name = val || null;
-      if (!saveData(data)) return;
-      toast(val ? `personalized for ${val}` : 'using she/her');
-      render();
+      return persistData(data, () => {
+        toast(val ? `personalized for ${val}` : 'using she/her');
+        render();
+      });
     });
   }
 
@@ -2289,9 +2422,10 @@ function confirmDel(dateStr) {
     const previousData = structuredClone(data);
     data.periods = data.periods.filter(p => p !== dateStr);
     delete data.period_ends[dateStr];
-    if (!saveData(data)) return;
-    toast(`removed ${fmtDate(dateStr)}`, false, previousData);
-    render();
+    return persistData(data, () => {
+      toast(`removed ${fmtDate(dateStr)}`, false, previousData);
+      render();
+    });
   });
 }
 
@@ -2301,9 +2435,10 @@ function confirmDelTension(dateStr) {
     if (!data.tensions.includes(dateStr)) return;
     const previousData = structuredClone(data);
     data.tensions = data.tensions.filter(t => t !== dateStr);
-    if (!saveData(data)) return;
-    toast(`removed tension ${fmtDate(dateStr)}`, false, previousData);
-    render();
+    return persistData(data, () => {
+      toast(`removed tension ${fmtDate(dateStr)}`, false, previousData);
+      render();
+    });
   });
 }
 
@@ -2321,6 +2456,7 @@ async function eraseMarcyData() {
   emailController = null;
   emailSubmissionPending = false;
   try {
+    if (nativeSavePending) await nativeSavePending;
     const plugin = window.Capacitor?.Plugins?.LocalNotifications;
     const cancellation = notificationQueue.then(async () => {
       if (!plugin) return;
@@ -2330,6 +2466,20 @@ async function eraseMarcyData() {
     notificationQueue = cancellation.catch(() => {});
     try { await cancellation; }
     catch { toast('could not cancel reminders — nothing erased', true); return false; }
+    if (nativeStorage) {
+      const store = preferences();
+      // Clear any old web-view copy first; never allow it to be migrated again.
+      for (const key of legacyKeys()) localStorage.removeItem(key);
+      await writeVerified(store, MIGRATION_KEY, '1');
+      const keys = (await store.keys()).keys.filter(ownsRecord);
+      keys.sort((a, b) => (a === STORAGE_KEY) - (b === STORAGE_KEY));
+      for (const key of keys) {
+        await store.remove({ key });
+        if ((await store.get({ key })).value !== null) throw new Error('Erase verification failed');
+        nativeRecords.delete(key);
+      }
+      storageReady = true;
+    } else {
     const recoveryKeys = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -2337,6 +2487,7 @@ async function eraseMarcyData() {
     }
     for (const key of recoveryKeys) localStorage.removeItem(key);
     localStorage.removeItem(STORAGE_KEY);
+    }
     clearTimeout(toastTimer);
     undoButton?.remove();
     undoButton = null;
@@ -2349,6 +2500,7 @@ async function eraseMarcyData() {
     toast('Marcy data erased');
     return true;
   } catch {
+    if (nativeStorage) { storageReady = false; renderRecovery(); }
     toast('could not erase all data — try again', true);
     return false;
   } finally {
@@ -2411,7 +2563,7 @@ function scheduleNotifications() {
 }
 
 function refreshCalendarDate() {
-  if (!document.hidden && isoDate(new Date()) !== renderedDay) {
+  if (storageReady && !nativeSavePending && !eraseInProgress && !document.hidden && isoDate(new Date()) !== renderedDay) {
     const active = document.activeElement;
     const focusedId = active?.id;
     const selection = active && typeof active.selectionStart === 'number' ? [active.selectionStart, active.selectionEnd] : null;
@@ -2450,9 +2602,21 @@ function scheduleDayRefresh() {
 document.addEventListener('visibilitychange', refreshCalendarDate);
 window.addEventListener('focus', refreshCalendarDate);
 window.addEventListener('pageshow', refreshCalendarDate);
-scheduleNotifications();
-render();
-scheduleDayRefresh();
+function finishStartup() {
+  scheduleNotifications();
+  render();
+  scheduleDayRefresh();
+}
+function startApp() {
+  if (!nativeStorage) { finishStartup(); return; }
+  if (storageInitialization) return storageInitialization;
+  storageInitialization = initializeNativeStorage().then(finishStartup).catch(() => {
+    storageReady = false;
+    renderRecovery();
+  }).finally(() => { storageInitialization = null; });
+  return storageInitialization;
+}
+startApp();
 </script>
 </body>
 </html>

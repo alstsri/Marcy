@@ -17,7 +17,7 @@ Cycle timing is estimated. Calendar estimates cannot confirm ovulation and must 
 
 ## Data and backups
 
-The current app stores history and settings in `localStorage` in the browser or native web view. There is no account or automatic history sync. The old Python app's `data.json` is a separate store and is not read by the browser prototype.
+The browser stores history and settings in `localStorage`. Installed native apps use Capacitor Preferences (UserDefaults on iOS and SharedPreferences on Android). Existing native web-view records are copied and verified before the old copy is removed; browser records remain in the browser. There is no account or automatic history sync. The old Python app's `data.json` is a separate store and is not read by the browser prototype.
 
 Use **export backup** on the Data page to keep a copy before clearing website data, changing browsers, or moving devices. Backups contain personal history: choose where to save and share them carefully. Importing a backup replaces the current history after confirmation. Local data deletion does not delete downloaded backups.
 
@@ -59,7 +59,9 @@ Automated checks do not replace testing on an actual iPhone, including VoiceOver
 npx cap copy ios
 ```
 
-When native dependencies or plugins change, use `npx cap sync ios`, then open the project with `npx cap open ios`. Building and signing require an appropriately configured Xcode installation. A full native build and device release have not been validated by the current automated checks.
+When native dependencies or plugins change, use `npx cap sync ios`, then open the project with `npx cap open ios`. Building and signing require an appropriately configured Xcode installation. A full native build and device release have not been validated by the current automated checks. On a device with existing native history, test an in-place update, confirm the same history appears, then restart the app and check it again. Also verify backup restore, deletion/Undo, reminders, and Fresh start using disposable test data. Do not uninstall to test migration: uninstalling removes native app data.
+
+The Preferences plugin uses UserDefaults on iOS. Its required API reason (`CA92.1`) is declared in `ios/App/App/PrivacyInfo.xcprivacy`, which is included in the app target’s resources. Inspect the final archive’s privacy report before submission.
 
 Scheduled reminders use Capacitor's local-notifications plugin in the native app. The hosted browser prototype does not provide those native reminders.
 
