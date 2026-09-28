@@ -700,19 +700,14 @@
   .backup-file { display: none; }
   .fresh-start {
     display: block;
+    position: relative;
+    flex: none;
+    width: fit-content;
     margin-top: 24px;
-    padding: 10px 0;
-    min-height: 44px;
-    background: none;
-    border: none;
-    color: #999;
-    font-family: inherit;
-    font-size: 11px;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 10px;
   }
-  .fresh-start:hover { color: var(--text); }
+  .fresh-start::after { content: ''; position: absolute; inset: -6px 0; }
   .fresh-start:focus-visible { outline: 1px solid var(--text); outline-offset: 4px; }
 
 
@@ -2110,28 +2105,6 @@ function renderManage(status, data, history) {
 
   html += renderTensionMap(status.tension_analysis);
 
-  // Settings
-  html += `
-    <div class="settings-section">
-      <div class="section-title">settings</div>
-      <div class="settings-row">
-        <span class="settings-label">cycle length override</span>
-        <div class="settings-value">
-          <input type="number" class="settings-input" id="settings-cycle" aria-label="Cycle length override in days" min="18" max="45"
-            placeholder="${data.settings.manual_cycle_length || getCycleLength(data)}"
-            value="${data.settings.manual_cycle_length || ''}">
-          <button class="settings-save" id="settings-save-cycle">save</button>
-        </div>
-      </div>
-      <div class="settings-row" style="border-bottom:none">
-        <span class="settings-label" style="font-size:11px;color:var(--text-muted)">
-          ${data.settings.manual_cycle_length ? 'manual override active — clear to use auto-calculation' : 'blank = auto-calculated from logged periods'}
-        </span>
-        ${data.settings.manual_cycle_length ? '<button class="settings-save" id="settings-clear-cycle">clear</button>' : ''}
-      </div>
-    </div>
-  `;
-
   // Partner name in settings
   html += `
     <div class="settings-section">
@@ -2158,6 +2131,28 @@ function renderManage(status, data, history) {
     </div>
   `;
 
+  // Settings
+  html += `
+    <div class="settings-section">
+      <div class="section-title">settings</div>
+      <div class="settings-row">
+        <span class="settings-label">cycle length override</span>
+        <div class="settings-value">
+          <input type="number" class="settings-input" id="settings-cycle" aria-label="Cycle length override in days" min="18" max="45"
+            placeholder="${data.settings.manual_cycle_length || getCycleLength(data)}"
+            value="${data.settings.manual_cycle_length || ''}">
+          <button class="settings-save" id="settings-save-cycle">save</button>
+        </div>
+      </div>
+      <div class="settings-row" style="border-bottom:none">
+        <span class="settings-label" style="font-size:11px;color:var(--text-muted)">
+          ${data.settings.manual_cycle_length ? 'manual override active — clear to use auto-calculation' : 'blank = auto-calculated from logged periods'}
+        </span>
+        ${data.settings.manual_cycle_length ? '<button class="settings-save" id="settings-clear-cycle">clear</button>' : ''}
+      </div>
+    </div>
+  `;
+
   // Share
   html += `
     <div class="settings-section">
@@ -2180,7 +2175,7 @@ function renderManage(status, data, history) {
         <button class="backup-btn" onclick="document.getElementById('import-file').click()">import backup</button>
         <input type="file" accept=".json" class="backup-file" id="import-file" aria-label="Backup file to import">
       </div>
-      <button class="fresh-start" id="erase-data">fresh start</button>
+      <button class="backup-btn fresh-start" id="erase-data">fresh start</button>
     </div>
   `;
 

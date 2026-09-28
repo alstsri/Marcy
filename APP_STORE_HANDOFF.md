@@ -115,7 +115,7 @@ Recheck current Apple requirements at submission time:
 
 - Make one coherent change at a time; test, commit, push, and allow an iPhone check when the UI changes.
 - Preserve minimal styling. Avoid adding explanatory copy to the dashboard for minor edge cases. Accessibility changes should preserve the established appearance.
-- The rare deletion entry is a muted underlined **fresh start** control, separated from backup buttons. Its confirmation explicitly says **erase data** and offers export first.
+- The rare deletion entry is a compact outlined **fresh start** button matching export/import, separated from them by extra space. Its confirmation explicitly says **erase data** and offers export first.
 - Daily guidance should retain useful cycle context and considerate, direct advice. A broad rewrite into generic relationship coaching was rejected and mostly reverted. Review specific claims individually.
 - Keep estimated timing clear without repeating the same qualifier throughout a section.
 - Multiple-person profiles, tension notes, Android packaging, and broad marketing revisions are deferred.
@@ -128,5 +128,6 @@ Recheck current Apple requirements at submission time:
 | --- | --- | --- |
 | 2026-09-28 | `720c11e`: Preferences migration | 100 tests pass; native compile and device validation pending on Mac mini. |
 | 2026-09-28 | Handoff document added | Start with Mac mini setup and native build above. |
+| 2026-09-28 | Browser layout refinement | Cycle-length override moved below Product updates; Fresh start uses a smaller backup-style button. Native build checks remain next. |
 
 Append subsequent commits, actual device/build results, outstanding failures, and the next concrete action here. Distinguish mocked tests, simulator checks, real-device checks, and App Store validation.
