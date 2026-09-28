@@ -2,6 +2,8 @@
 
 Marcy is a browser prototype for recording period starts and tension events, viewing cycle estimates, and reading cycle-related guidance. The current app lives in `docs/` and is hosted on [GitHub Pages](https://alstsri.github.io/Marcy/). A Capacitor iOS project is also included for native development.
 
+For the current release status and Mac mini pickup steps, see [App Store handoff](APP_STORE_HANDOFF.md).
+
 ## Use the browser prototype
 
 Open https://alstsri.github.io/Marcy/ in Safari. To keep it on your iPhone home screen, use **Share → Add to Home Screen**. Load the app online first so its service worker can cache the app for offline use.
