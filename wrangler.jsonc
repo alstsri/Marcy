@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "marcy-labs-site",
+  "compatibility_date": "2026-09-29",
+  "assets": {
+    "directory": "./website",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "marcyapp.com", "custom_domain": true },
+    { "pattern": "www.marcyapp.com", "custom_domain": true }
+  ]
+}
