@@ -8,7 +8,7 @@ const KEY='marcy_data', MARKER='marcy_storage_v1';
 const data=()=>({periods:['2026-08-01'],tensions:['2026-08-02'],settings:{default_cycle_length:28,manual_cycle_length:null},onboarded:true});
 const flush=()=>new Promise(r=>setImmediate(r));
 async function boot(t,{legacy={},native={},missing=false,failGet=false,failSet=null,failRemove=null,blockedLegacy=false}={}){
- const state={values:new Map(Object.entries(native)),failGet,failSet,failRemove,hold:null,errors:[],writes:[],blobs:[]};
+ const state={values:new Map(Object.entries(native)),failGet,failSet,failRemove,hold:null,errors:[],writes:[],blobs:[],files:[],shares:[]};
  const vc=new VirtualConsole();vc.on('jsdomError',e=>state.errors.push(e.message));
  const plugin={
   async get({key}){if(state.failGet)throw Error('read');return {value:state.values.get(key)??null};},
@@ -21,7 +21,11 @@ async function boot(t,{legacy={},native={},missing=false,failGet=false,failSet=n
   const D=w.Date;w.Date=class extends D{constructor(...a){super(...(a.length?a:['2026-09-28T12:00:00']));}};
   for(const [k,v] of Object.entries(legacy))w.localStorage.setItem(k,v);
   if(blockedLegacy){w.Storage.prototype.getItem=function(k){throw Error('blocked');};Object.defineProperty(w.Storage.prototype,'length',{get(){throw Error('blocked');}});}
-  w.Capacitor={isNativePlatform:()=>true,Plugins:missing?{}:{Preferences:plugin}};
+  w.Capacitor={isNativePlatform:()=>true,Plugins:missing?{}:{
+   Preferences:plugin,
+   Filesystem:{async writeFile(options){state.files.push(options);return {uri:`file:///cache/${options.path}`};}},
+   Share:{async share(options){state.shares.push(options);return {activityType:''};}},
+  }};
   w.URL.createObjectURL=b=>{state.blobs.push(b);return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
  }});t.after(()=>dom.window.close());const w=dom.window;await w.startApp();assert.deepEqual(state.errors,[]);return {w,state,plugin};
 }
@@ -95,12 +99,13 @@ test('erase failure is not reported as success and preserves primary until recov
  state.failRemove=null;await w.startApp();assert.equal(await w.eraseMarcyData(),true);
 });
 
-test('native import confirms replacement and export reads the committed native history',async t=>{
+test('native import confirms replacement and export shares the committed native history as a file',async t=>{
  const {w,state}=await boot(t,{native:{[KEY]:JSON.stringify(data()),[MARKER]:'1'}});
  w.FileReader=class{readAsText(){this.onload({target:{result:JSON.stringify({periods:['2026-09-01'],tensions:[]})}});}};
  w.importData({size:100});assert.match(w.document.querySelector('#confirm-root').textContent,/replace your current history/);
  assert.equal(w.loadData().periods[0],'2026-08-01');w.document.querySelector('#confirm-yes').click();await flush();assert.equal(w.loadData().periods[0],'2026-09-01');
- w.exportData();assert.equal(state.blobs.length,1);assert.equal(w.localStorage.getItem(KEY),null);
+ assert.equal(await w.exportData(),true);assert.equal(state.blobs.length,0);assert.equal(state.files.length,1);assert.equal(state.files[0].directory,'CACHE');assert.equal(state.files[0].encoding,'utf8');
+ assert.equal(JSON.parse(state.files[0].data).periods[0],'2026-09-01');assert.deepEqual(Array.from(state.shares[0].files),['file:///cache/marcy-backup-2026-09-28.json']);assert.equal(w.localStorage.getItem(KEY),null);
 });
 
 test('native deletion and Undo persist in Preferences',async t=>{

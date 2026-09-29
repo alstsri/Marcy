@@ -1023,31 +1023,55 @@ function renderRecovery() {
   $('#recovery-retry').addEventListener('click', () => nativeStorage ? startApp() : render());
   $('#recovery-import').addEventListener('click', () => $('#recovery-file').click());
   $('#recovery-file').addEventListener('change', event => { if (event.target.files[0]) importData(event.target.files[0]); });
-  $('#recovery-download').addEventListener('click', () => {
+  $('#recovery-download').addEventListener('click', async () => {
     try {
       const raw = readStoredRaw();
       if (raw === null) throw new Error('No saved data');
-      const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `marcy-recovery-${isoDate(new Date())}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch { toast('could not download — try again', true); }
+      await exportBackupFile(raw, `marcy-recovery-${isoDate(new Date())}.json`);
+    } catch { toast('could not export saved data — try again', true); }
   });
 }
 
 // ── Export / Import ─────────────────────────────────────────────
-function exportData() {
-  const data = { ...loadData(), schema_version: 1 };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+function downloadBackupFile(contents, filename) {
+  const blob = new Blob([contents], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `marcy-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
   toast('backup downloaded');
+}
+
+async function exportBackupFile(contents, filename) {
+  if (!nativeStorage) {
+    downloadBackupFile(contents, filename);
+    return true;
+  }
+  const filesystem = window.Capacitor?.Plugins?.Filesystem;
+  const share = window.Capacitor?.Plugins?.Share;
+  if (!filesystem || !share) throw new Error('Native backup plugins unavailable');
+  const saved = await filesystem.writeFile({
+    path: filename,
+    data: contents,
+    directory: 'CACHE',
+    encoding: 'utf8'
+  });
+  if (!saved?.uri) throw new Error('Native backup file unavailable');
+  await share.share({ title: 'Marcy backup', files: [saved.uri] });
+  return true;
+}
+
+async function exportData() {
+  try {
+    const data = { ...loadData(), schema_version: 1 };
+    const filename = `marcy-backup-${new Date().toISOString().split('T')[0]}.json`;
+    return await exportBackupFile(JSON.stringify(data, null, 2), filename);
+  } catch {
+    toast('could not export backup — try again', true);
+    return false;
+  }
 }
 
 // Backups are untrusted input. Build a new, allowlisted object before storage.

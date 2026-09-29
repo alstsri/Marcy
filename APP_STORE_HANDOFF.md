@@ -1,12 +1,12 @@
 # Marcy — App Store handoff
 
-Last updated: September 28, 2026.
+Last updated: September 29, 2026.
 
 ## Start here
 
 The current priority is **a tested native iOS build, then TestFlight and App Store submission**. Marketing-plan review and Android packaging are deferred. Keep the browser prototype functional throughout.
 
-The latest implementation checkpoint is **`720c11e` on `main`**: native history now uses Capacitor Preferences with migration from the old web-view storage. This document is added after that commit. The change is implemented and tested with mocks; **it has not yet been built or tested on a real iPhone**.
+Native Preferences storage and iOS backup sharing are implemented and tested. Xcode 26.1 builds and archives successfully, and the current native build has been exercised on an iPhone 15 Pro running iOS 26.6.1. Core install, relaunch persistence, in-place update, backup sharing, and confirmed backup restoration passed. The remaining device and submission work is listed below.
 
 The owner reports Xcode **26.1 on the Mac mini**. The MacBook used for the code changes has Xcode 15.4. Continue native build work on the mini; verify its selected Xcode and signing setup rather than assuming they are configured.
 
@@ -61,30 +61,32 @@ The MacBook's repo-only SSH deploy key is machine-specific. Git authentication o
 - A migration marker prevents stale web-view data from returning after Fresh start. Existing native records take precedence over legacy copies.
 - Native success messages wait for verified saves. Failed or uncertain writes open recovery for a fresh read. Deletion waits for an outstanding save and cancels reminders.
 - Browser records do **not** automatically migrate into the installed native app: those are separate storage contexts. Use export/import to transfer them.
-- `@capacitor/preferences` is locked at 8.0.1. The generated SPM package includes `CapacitorPreferences`.
-- `ios/App/App/PrivacyInfo.xcprivacy` declares UserDefaults reason `CA92.1` and is included in the app target's resources. This does not replace the App Store Connect privacy questionnaire or final archive inspection.
+- `@capacitor/preferences` is locked at 8.0.1. Native backup export uses `@capacitor/filesystem` 8.1.3 and `@capacitor/share` 8.0.2. The generated SPM package includes all three plugins.
+- `ios/App/App/PrivacyInfo.xcprivacy` declares UserDefaults reason `CA92.1` and file-timestamp reason `C617.1`, and is included in the app target's resources. This does not replace the App Store Connect privacy questionnaire or final archive inspection.
 - Preferences is local persistence, not an encrypted database or cloud sync. Uninstalling the native app removes its app data; backups remain important.
 - Legacy `app.py`, `marcy.py`, `templates/`, and `static/` are separate, outdated implementations. Do not resume development there.
 
-## Verification completed at 720c11e
+## Verification completed
 
 - [x] All **100 automated tests pass**: 85 existing tests and 15 native-storage tests.
 - [x] Native tests cover migration/reload, interrupted migration, unavailable storage/plugin, malformed records and recovery, failed/uncertain saves, concurrent email completion, backup import, export invocation, deletion/Undo, and Fresh start without data resurrection.
 - [x] Clean dependency install and audit: **zero reported vulnerabilities** at the time of checking.
-- [x] Capacitor sync in a clean temporary copy detects both Local Notifications and Preferences and generates their native registration.
+- [x] Capacitor sync detects Filesystem, Local Notifications, Preferences, and Share and generates their native registration.
 - [x] Xcode project and privacy-manifest plist syntax validation passes.
 - [x] Updated browser HTML is verified live on GitHub Pages.
-- [ ] Compile/archive with Xcode 26.1, inspect the built resources and privacy report, and test native behavior. Browser/jsdom tests do not establish native readiness.
+- [x] Compile and archive with Xcode 26.1, inspect the built resources and privacy manifest, and test core behavior on a real iPhone.
+- [x] Native export opens the iOS share sheet and produces a file that can be saved to Files.
+- [x] Import confirmation replaces current data; a saved backup restored the cycle length from 30 days to its backed-up value of 28 days.
 
 ## Next work: native build and device checks
 
 Do these before changing the store listing or submitting anything. Record the device, iOS version, build number, and results below.
 
-1. Build and run the current app in the simulator, then on an iPhone. Check plugin registration, startup errors, layout, keyboard, and safe-area behavior.
+1. Continue layout, keyboard, and safe-area checks on the physical iPhone. Core startup and plugin registration already passed.
 2. Test native storage migration with **disposable records in an older installed build**, then install this build over it using the same app identity. Export a backup first. **Do not uninstall between builds**: that destroys the state needed to test migration.
 3. Confirm periods, tension events, name, settings, and period ends survive the update, force-quit/reopen, and a device restart. Confirm later edits persist too.
-4. Test a fresh install separately. Confirm it opens onboarding normally. Transfer a synthetic browser backup into it and verify the result.
-5. Verify export produces a usable file on iOS and import restores it only after confirmation. Test actual file handling; a mocked download test is not enough.
+4. Fresh install and onboarding passed with synthetic data. A native backup export/import round trip also passed; browser-to-native transfer remains optional coverage.
+5. Native export and confirmed import passed using the iOS share sheet and Files.
 6. Test deletion, cancellation, Undo, and Fresh start using disposable data. Check that no records return after reopening and unrelated data is untouched.
 7. Test native notification permission allow/deny, scheduling, changes to recorded dates, pause, and Fresh start cancellation. Check actual delivery as well as pending requests.
 8. Check offline launch, VoiceOver navigation and dialogs, larger text, and the device sizes/orientations the target supports.
@@ -129,5 +131,8 @@ Recheck current Apple requirements at submission time:
 | 2026-09-28 | `720c11e`: Preferences migration | 100 tests pass; native compile and device validation pending on Mac mini. |
 | 2026-09-28 | Handoff document added | Start with Mac mini setup and native build above. |
 | 2026-09-28 | Browser layout refinement | Cycle-length override moved below Product updates; Fresh start uses a smaller backup-style button. Native build checks remain next. |
+| 2026-09-29 | Xcode 26.1 build and archive | Simulator Debug/Release, signed generic-device Release, and signed archive passed; 100 tests and npm audit passed. |
+| 2026-09-29 | iPhone 15 Pro, iOS 26.6.1, app 1.0 (1) | Clean install, onboarding, notification permission prompt, force-quit/relaunch persistence, and in-place update retention passed. Legacy migration was unavailable because no older build was installed. |
+| 2026-09-29 | Native backup round trip | Replaced browser-style download with Filesystem + Share on iOS. Share sheet and Files save passed; confirmed import restored the backed-up 28-day cycle length after a temporary change to 30 days. |
 
 Append subsequent commits, actual device/build results, outstanding failures, and the next concrete action here. Distinguish mocked tests, simulator checks, real-device checks, and App Store validation.
