@@ -6,7 +6,7 @@ Last updated: September 29, 2026.
 
 The current priority is **a tested native iOS build, then TestFlight and App Store submission**. Marketing-plan review and Android packaging are deferred. Keep the browser prototype functional throughout.
 
-Native Preferences storage and iOS backup sharing are implemented and tested. Xcode 26.1 builds and archives successfully, and the current native build has been exercised on an iPhone 15 Pro running iOS 26.6.1. Core install, relaunch persistence, in-place update, backup sharing, and confirmed backup restoration passed. The remaining device and submission work is listed below.
+Native Preferences storage, iOS backup sharing, notifications, and Dynamic Type are implemented and tested. Xcode 26.1 builds and archives successfully, and the current native build completed the planned readiness checklist on an iPhone 15 Pro running iOS 26.6.1. The remaining work is App Store Connect preparation, TestFlight validation, and submission.
 
 The owner reports Xcode **26.1 on the Mac mini**. The MacBook used for the code changes has Xcode 15.4. Continue native build work on the mini; verify its selected Xcode and signing setup rather than assuming they are configured.
 
@@ -68,7 +68,7 @@ The MacBook's repo-only SSH deploy key is machine-specific. Git authentication o
 
 ## Verification completed
 
-- [x] All **100 automated tests pass**: 85 existing tests and 15 native-storage tests.
+- [x] All **102 automated tests pass**, including native-storage and Dynamic Type coverage.
 - [x] Native tests cover migration/reload, interrupted migration, unavailable storage/plugin, malformed records and recovery, failed/uncertain saves, concurrent email completion, backup import, export invocation, deletion/Undo, and Fresh start without data resurrection.
 - [x] Clean dependency install and audit: **zero reported vulnerabilities** at the time of checking.
 - [x] Capacitor sync detects Filesystem, Local Notifications, Preferences, and Share and generates their native registration.
@@ -77,21 +77,16 @@ The MacBook's repo-only SSH deploy key is machine-specific. Git authentication o
 - [x] Compile and archive with Xcode 26.1, inspect the built resources and privacy manifest, and test core behavior on a real iPhone.
 - [x] Native export opens the iOS share sheet and produces a file that can be saved to Files.
 - [x] Import confirmation replaces current data; a saved backup restored the cycle length from 30 days to its backed-up value of 28 days.
+- [x] A real local notification was delivered on the physical iPhone; native logs also confirmed cancellation and replacement of pending reminders.
+- [x] Undo, Fresh start cancellation and erasure, relaunch after erasure, backup restoration, offline launch, device restart persistence, keyboard/layout, rotation, safe areas, and VoiceOver passed on the physical iPhone.
+- [x] Larger Text initially exposed fixed web font sizes. The final build uses iOS Dynamic Type-aware proportional sizing and resilient wrapping/scrolling; standard and maximum accessibility sizes passed in the simulator, and the physical-phone recheck passed.
+- [x] Final signed Release archive after all device fixes: `/tmp/Marcy-Final-Readiness-20260929.xcarchive`.
 
-## Next work: native build and device checks
+## Native validation status
 
-Do these before changing the store listing or submitting anything. Record the device, iOS version, build number, and results below.
+The planned device checklist is complete on an iPhone 15 Pro running iOS 26.6.1 with app version 1.0 (1). The signed final archive also passes. Keep real personal histories out of future TestFlight fixtures, screenshots, logs, and Git.
 
-1. Continue layout, keyboard, and safe-area checks on the physical iPhone. Core startup and plugin registration already passed.
-2. Test native storage migration with **disposable records in an older installed build**, then install this build over it using the same app identity. Export a backup first. **Do not uninstall between builds**: that destroys the state needed to test migration.
-3. Confirm periods, tension events, name, settings, and period ends survive the update, force-quit/reopen, and a device restart. Confirm later edits persist too.
-4. Fresh install and onboarding passed with synthetic data. A native backup export/import round trip also passed; browser-to-native transfer remains optional coverage.
-5. Native export and confirmed import passed using the iOS share sheet and Files.
-6. Test deletion, cancellation, Undo, and Fresh start using disposable data. Check that no records return after reopening and unrelated data is untouched.
-7. Test native notification permission allow/deny, scheduling, changes to recorded dates, pause, and Fresh start cancellation. Check actual delivery as well as pending requests.
-8. Check offline launch, VoiceOver navigation and dialogs, larger text, and the device sizes/orientations the target supports.
-
-If export/import or native bridge behavior fails, fix that before claiming the migration is release-ready. Keep real personal histories out of test fixtures, screenshots, logs, and Git.
+One optional coverage gap remains: migration from an installed build that predates native Preferences could not be reproduced because the phone did not already contain that older build. Automated migration coverage and simulator in-place update persistence pass. This gap does not block the current TestFlight step, but it should be revisited if users have received any pre-Preferences native build.
 
 ## Remaining submission work
 
@@ -131,8 +126,10 @@ Recheck current Apple requirements at submission time:
 | 2026-09-28 | `720c11e`: Preferences migration | 100 tests pass; native compile and device validation pending on Mac mini. |
 | 2026-09-28 | Handoff document added | Start with Mac mini setup and native build above. |
 | 2026-09-28 | Browser layout refinement | Cycle-length override moved below Product updates; Fresh start uses a smaller backup-style button. Native build checks remain next. |
-| 2026-09-29 | Xcode 26.1 build and archive | Simulator Debug/Release, signed generic-device Release, and signed archive passed; 100 tests and npm audit passed. |
+| 2026-09-29 | Xcode 26.1 build and archive | Simulator Debug/Release, signed generic-device Release, and signed archive passed; 102 tests and npm audit passed. |
 | 2026-09-29 | iPhone 15 Pro, iOS 26.6.1, app 1.0 (1) | Clean install, onboarding, notification permission prompt, force-quit/relaunch persistence, and in-place update retention passed. Legacy migration was unavailable because no older build was installed. |
 | 2026-09-29 | Native backup round trip | Replaced browser-style download with Filesystem + Share on iOS. Share sheet and Files save passed; confirmed import restored the backed-up 28-day cycle length after a temporary change to 30 days. |
+| 2026-09-29 | Physical-device readiness checklist | Notification delivery, reminder replacement, Undo, Fresh start, restart persistence, offline launch, keyboard/layout, rotation, safe areas, and VoiceOver passed on the iPhone 15 Pro. |
+| 2026-09-29 | Dynamic Type and final archive | Replaced fixed font sizes with iOS Dynamic Type-aware proportional sizing and large-text layout protections. Standard and maximum accessibility sizes passed in the simulator and on the phone. All 102 tests, npm audit, signed device build, and final Release archive passed. Next: App Store Connect preparation and TestFlight. |
 
 Append subsequent commits, actual device/build results, outstanding failures, and the next concrete action here. Distinguish mocked tests, simulator checks, real-device checks, and App Store validation.

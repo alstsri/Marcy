@@ -7,9 +7,9 @@ Starting checkpoint: `ec94bd9` (`Refine data settings order and fresh start butt
 
 ## Outcome
 
-Marcy compiles and signs successfully with Xcode 26.1. Debug and Release simulator builds passed, signed generic-device Release builds passed, and a fresh signed Xcode archive containing the native backup fix completed successfully. The app was installed on an iPhone 15 Pro running iOS 26.6.1 and passed onboarding, native persistence, in-place update, native backup sharing, and backup restoration checks.
+Marcy compiles and signs successfully with Xcode 26.1. Debug and Release simulator builds passed, signed generic-device Release builds passed, and a fresh signed Xcode archive containing the final Dynamic Type fix completed successfully. The app was installed on an iPhone 15 Pro running iOS 26.6.1 and passed the planned physical-device readiness checklist, including onboarding, persistence, notification delivery, backup sharing and restoration, Fresh start, Undo, offline launch, restart persistence, VoiceOver, rotation, keyboard layout, safe areas, and larger text.
 
-The app is not yet ready for App Store submission. Notification delivery, restart persistence, accessibility and layout checks, distribution validation, and several App Store details remain outstanding. The current build is ready for the remaining device checks and then TestFlight validation.
+The native build is ready to move into TestFlight validation. App Store Connect setup, store metadata, final screenshots, distribution validation/upload, and TestFlight testing remain outstanding before submission.
 
 ## Environment verified
 
@@ -27,13 +27,14 @@ The app is not yet ready for App Store submission. Notification delivery, restar
 
 ## Checks completed
 
-- `npm test`: all 100 tests passed.
+- `npm test`: all 102 tests passed.
 - `npx cap sync ios`: completed successfully.
 - Capacitor detected and linked Filesystem 8.1.3, Local Notifications 8.0.2, Preferences 8.0.1, and Share 8.0.2.
 - Debug build for iPhone 17 Pro simulator: passed.
 - Release build for iPhone 17 Pro simulator: passed.
 - Signed Release build for generic physical iPhone: passed.
 - Fresh signed Xcode archive after the backup fix: passed (`/tmp/Marcy-Native-Backup.xcarchive`).
+- Final signed Release archive after the Dynamic Type fix: passed (`/tmp/Marcy-Final-Readiness-20260929.xcarchive`).
 - App bundle inspection confirmed:
   - packaged `public/index.html`
   - packaged Capacitor configuration
@@ -52,20 +53,18 @@ The app is not yet ready for App Store submission. Notification delivery, restar
 - Installation of the updated build over the existing app retained its data: passed.
 - Native backup export opened the iOS share sheet and produced a file that could be saved to Files: passed.
 - Native import displayed replacement confirmation and restored the exported cycle length from 30 days to the backed-up 28 days: passed.
+- Actual local-notification delivery on the physical phone: passed.
+- Reminder reconciliation in native logs showed the prior requests being cancelled and the current fertile-window and PMS reminders being scheduled: passed.
+- Undo, Fresh start cancellation, confirmed erasure, clean relaunch, and backup restoration after erasure: passed.
+- Persistence after a full device restart: passed.
+- Offline launch: passed.
+- Portrait/landscape rotation, keyboard interaction, safe-area layout, and control accessibility: passed.
+- VoiceOver navigation: passed by physical-device review.
+- Dynamic Type initially failed because the WebView used fixed pixel sizes. The interface now uses iOS Dynamic Type-aware root sizing with proportional text and wrapping/scroll protections. Simulator comparison at standard and maximum accessibility sizes and a physical-phone recheck both passed.
 
 The first screenshots taken immediately after launch were blank while the WebView initialized. Settled screenshots showed the correct dashboard or onboarding screen; this was launch timing rather than a persistent blank-screen failure.
 
 ## Still required
-
-### Physical iPhone testing
-
-Continue on the iPhone 15 Pro with disposable data and verify:
-
-- persistence after a device restart
-- notification scheduling, actual delivery, rescheduling, pause, and cancellation
-- Fresh start and Undo
-- keyboard, safe areas, supported orientations, larger text, and VoiceOver
-- offline launch
 
 Preferences migration from a build predating native Preferences could not be exercised on this phone because Marcy was not already installed before this test. Simulator in-place update persistence passed, but this does not fully replace a real legacy migration check.
 
@@ -84,6 +83,6 @@ Preferences migration from a build predating native Preferences could not be exe
 
 Native compilation and development signing: **passed**  
 Simulator smoke testing: **passed for startup, persistence, clean onboarding, and update checks**  
-Physical iPhone testing: **partially passed; core install, persistence, and backup round trip passed**  
+Physical iPhone testing: **passed for the planned release-readiness checklist**
 TestFlight upload: **not started**  
-App Store submission: **not ready**
+App Store submission: **not ready; store preparation and TestFlight remain**

@@ -17,6 +17,14 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* Use rem-based type so WebKit can follow the user's iOS Dynamic Type setting. */
+  html { font-size: 17px; }
+  @supports (font: -apple-system-body) {
+    @media (hover: none) {
+      html { font: -apple-system-body; }
+    }
+  }
+
   :root {
     --bg: #0a0a0a;
     --surface: #111111;
@@ -39,6 +47,7 @@
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    overflow-wrap: anywhere;
   }
 
   body::before {
@@ -76,7 +85,7 @@
     margin-bottom: 40px;
   }
   .header h1 {
-    font-size: 14px;
+    font-size: .823529rem;
     font-weight: 400;
     letter-spacing: 4px;
     text-transform: uppercase;
@@ -103,7 +112,7 @@
     background: #0a0a1a;
   }
   .phase-label {
-    font-size: 11px;
+    font-size: .647059rem;
     font-weight: 600;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -113,13 +122,14 @@
   .phase-banner.pms .phase-label { color: var(--orange); }
   .phase-banner.late .phase-label { color: var(--blue); }
   .phase-sub {
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
   }
 
   /* Cycle Day Ring */
   .ring-section {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 32px;
     margin-bottom: 40px;
@@ -156,20 +166,20 @@
     text-align: center;
   }
   .ring-day {
-    font-size: 32px;
+    font-size: 1.882353rem;
     font-weight: 300;
     color: var(--accent);
     line-height: 1;
   }
   .ring-label {
-    font-size: 9px;
+    font-size: .529412rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-muted);
     margin-top: 4px;
   }
   .ring-meta {
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
     line-height: 2;
   }
@@ -182,7 +192,7 @@
     margin-bottom: 40px;
   }
   .timeline-title, .timeline-note {
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -191,6 +201,8 @@
   .timeline-note { margin: 16px 0 0; line-height: 1.8; }
   .timeline-row {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
@@ -198,15 +210,15 @@
   }
   .timeline-row:last-child { border-bottom: none; }
   .tl-event {
-    font-size: 13px;
+    font-size: .764706rem;
     color: var(--text);
   }
   .tl-date {
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
   }
   .tl-countdown {
-    font-size: 12px;
+    font-size: .705882rem;
     font-weight: 500;
     padding: 3px 8px;
     border-radius: 3px;
@@ -223,15 +235,17 @@
   }
   .log-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .log-input {
     flex: 1;
+    min-width: 0;
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text);
     font-family: inherit;
-    font-size: 13px;
+    font-size: .764706rem;
     padding: 10px 14px;
     border-radius: 4px;
     outline: none;
@@ -252,7 +266,7 @@
     color: var(--bg);
     border: none;
     font-family: inherit;
-    font-size: 12px;
+    font-size: .705882rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -273,13 +287,15 @@
     border: 1px solid var(--border);
     color: var(--text);
     font-family: inherit;
-    font-size: 12px;
+    font-size: .705882rem;
     padding: 10px 20px;
     border-radius: 4px;
     opacity: 0;
     transition: all 0.3s ease;
     pointer-events: none;
     z-index: 100;
+    width: max-content;
+    max-width: calc(100vw - 32px);
   }
   .toast.show {
     opacity: 1;
@@ -297,7 +313,7 @@
     align-items: center;
     padding: 10px 0;
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    font-size: .764706rem;
   }
   .history-row:last-child { border-bottom: none; }
   .history-date { color: var(--text); }
@@ -307,7 +323,7 @@
     background: none;
     border: none;
     font-family: inherit;
-    font-size: 11px;
+    font-size: .647059rem;
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 2px;
@@ -319,7 +335,7 @@
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
   }
   .stat-row span { color: var(--text); }
@@ -336,10 +352,10 @@
 
   /* Recorded tension: fixed color scale, with counts and coverage in every cell. */
   .tension-map { margin-bottom: 32px; }
-  .heat-note { font-size: 11px; line-height: 1.7; color: var(--text-dim); margin: 10px 0; }
-  .heat-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin: 12px 0; }
-  .heat-cell { min-height: 48px; padding: 5px 1px; border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 11px; color: var(--text); background: var(--surface2); cursor: pointer; }
-  .heat-cell small { display: block; font-size: 9px; margin-top: 5px; }
+  .heat-note { font-size: .647059rem; line-height: 1.7; color: var(--text-dim); margin: 10px 0; }
+  .heat-grid { display: grid; grid-template-columns: repeat(7, minmax(2.3rem, 1fr)); gap: 5px; margin: 12px 0; overflow-x: auto; }
+  .heat-cell { min-height: 48px; padding: 5px 1px; border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: .647059rem; color: var(--text); background: var(--surface2); cursor: pointer; }
+  .heat-cell small { display: block; font-size: .529412rem; margin-top: 5px; }
   .heat-cell[data-level="1"] { background: #453d20; }
   .heat-cell[data-level="2"] { background: #65531b; }
   .heat-cell[data-level="3"] { background: #977926; color: #fff; }
@@ -348,9 +364,9 @@
   .heat-cell[aria-pressed="true"], .heat-cell:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
   .heat-cell.zero-events { color: var(--text-dim); background: transparent; }
   .heat-cell.is-today { border-color: #8b7541; box-shadow: inset 0 0 0 1px #8b754155; }
-  .heat-mode { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); font: inherit; font-size: 11px; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
+  .heat-mode { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); font: inherit; font-size: .647059rem; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
   .today-btn.heat-history-btn { margin-bottom: 8px; }
-  .today-card.heat-details { margin-top: 0; margin-bottom: 0; font-size: 11px; line-height: 1.7; }
+  .today-card.heat-details { margin-top: 0; margin-bottom: 0; font-size: .647059rem; line-height: 1.7; }
   .heat-details ul { padding: 0; margin: 0; list-style: none; max-height: 220px; overflow: auto; }
   .heat-details li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .heat-details time { white-space: nowrap; }
@@ -362,7 +378,7 @@
     border: 1px solid var(--border);
     color: var(--text);
     font-family: inherit;
-    font-size: 13px;
+    font-size: .764706rem;
     font-weight: 400;
     padding: 14px 20px;
     border-radius: 4px;
@@ -376,7 +392,7 @@
   }
   .today-btn:hover { border-color: var(--text-dim); background: var(--surface2); }
   .today-btn .today-arrow {
-    font-size: 10px;
+    font-size: .588235rem;
     color: var(--text-muted);
     transition: transform 0.2s;
   }
@@ -395,7 +411,7 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .today-section-label {
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -404,7 +420,7 @@
   }
   .today-section-label:first-of-type { margin-top: 0; }
   .today-text {
-    font-size: 13px;
+    font-size: .764706rem;
     line-height: 1.7;
     color: var(--text-dim);
   }
@@ -418,14 +434,14 @@
     padding: 40px 0;
   }
   .onboard-title {
-    font-size: 16px;
+    font-size: .941176rem;
     font-weight: 300;
     color: var(--accent);
     margin-bottom: 24px;
     line-height: 1.6;
   }
   .onboard-text {
-    font-size: 13px;
+    font-size: .764706rem;
     color: var(--text-dim);
     line-height: 1.8;
     margin-bottom: 32px;
@@ -434,7 +450,7 @@
     margin-bottom: 20px;
   }
   .onboard-label {
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -442,11 +458,12 @@
   }
   .onboard-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
   }
   .onboard-note {
-    font-size: 11px;
+    font-size: .647059rem;
     color: var(--text-muted);
     margin-top: 6px;
   }
@@ -456,7 +473,7 @@
     color: var(--bg);
     border: none;
     font-family: inherit;
-    font-size: 13px;
+    font-size: .764706rem;
     font-weight: 600;
     letter-spacing: 1px;
     padding: 14px 20px;
@@ -474,7 +491,7 @@
     background: none;
     border: none;
     font-family: inherit;
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-muted);
     cursor: pointer;
     padding: 12px;
@@ -503,19 +520,20 @@
     text-align: center;
   }
   .confirm-msg {
-    font-size: 13px;
+    font-size: .764706rem;
     color: var(--text);
     margin-bottom: 20px;
     line-height: 1.6;
   }
   .confirm-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .confirm-actions button {
     flex: 1;
     font-family: inherit;
-    font-size: 12px;
+    font-size: .705882rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -549,16 +567,17 @@
   }
   .late-prompt-top {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
   .late-prompt-text {
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
   }
   .late-prompt-extra {
-    font-size: 11px;
+    font-size: .647059rem;
     color: var(--text-muted);
     margin-top: 6px;
   }
@@ -567,7 +586,7 @@
     color: var(--bg);
     border: none;
     font-family: inherit;
-    font-size: 11px;
+    font-size: .647059rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -581,7 +600,7 @@
 
   /* Learning note */
   .learning-note {
-    font-size: 11px;
+    font-size: .647059rem;
     color: var(--text-muted);
     line-height: 1.8;
     padding: 12px 16px;
@@ -604,12 +623,13 @@
     margin-bottom: 32px;
   }
   .email-prompt-text {
-    font-size: 12px;
+    font-size: .705882rem;
     color: var(--text-dim);
     margin-bottom: 10px;
   }
   .email-prompt-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .email-prompt-skip {
@@ -618,7 +638,7 @@
     background: none;
     border: none;
     font-family: inherit;
-    font-size: 11px;
+    font-size: .647059rem;
     color: var(--text-muted);
     cursor: pointer;
     padding: 8px;
@@ -632,16 +652,19 @@
   }
   .settings-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    font-size: .764706rem;
+    gap: 8px;
   }
   .settings-row:last-child { border-bottom: none; }
   .settings-label { color: var(--text-dim); }
   .settings-value {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
   }
@@ -651,7 +674,7 @@
     border: 1px solid var(--border);
     color: var(--text);
     font-family: inherit;
-    font-size: 13px;
+    font-size: .764706rem;
     padding: 6px 10px;
     border-radius: 4px;
     text-align: center;
@@ -663,7 +686,7 @@
     border: 1px solid var(--border);
     color: var(--text-dim);
     font-family: inherit;
-    font-size: 11px;
+    font-size: .647059rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -677,16 +700,17 @@
   /* Backup */
   .backup-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
   }
   .backup-btn {
-    flex: 1;
+    flex: 1 1 130px;
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text-dim);
     font-family: inherit;
-    font-size: 11px;
+    font-size: .647059rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -705,7 +729,7 @@
     width: fit-content;
     margin-top: 24px;
     padding: 8px 12px;
-    font-size: 10px;
+    font-size: .588235rem;
   }
   .fresh-start::after { content: ''; position: absolute; inset: -6px 0; }
   .fresh-start:focus-visible { outline: 1px solid var(--text); outline-offset: 4px; }
@@ -713,7 +737,7 @@
 
   /* Terms */
   .terms {
-    font-size: 10px;
+    font-size: .588235rem;
     color: var(--text-muted);
     line-height: 1.8;
     padding: 16px 0;
@@ -721,7 +745,7 @@
     margin-top: 8px;
   }
   .terms-toggle {
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -752,7 +776,7 @@
     padding: 14px 0 max(14px, env(safe-area-inset-bottom));
     text-align: center;
     font-family: inherit;
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -772,7 +796,7 @@
   .footer {
     text-align: center;
     padding: 20px 0;
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 2px;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -786,13 +810,13 @@
     text-align: center;
     padding: 60px 20px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-size: .764706rem;
     line-height: 2;
   }
 
   /* Sections */
   .section-title {
-    font-size: 10px;
+    font-size: .588235rem;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -804,7 +828,7 @@
     .app { padding: 16px 16px 72px; }
     .ring-section { gap: 20px; }
     .ring-container { width: 100px; height: 100px; }
-    .ring-day { font-size: 26px; }
+    .ring-day { font-size: 1.529412rem; }
   }
 </style>
 </head>
@@ -1145,7 +1169,7 @@ function importData(file) {
       return;
     }
     showConfirm(
-      'This will replace your current history.<br><span style="font-size:11px;color:var(--text-dim)">Your period dates, tension events, and settings will be replaced with the contents of this backup.</span>',
+      'This will replace your current history.<br><span style="font-size: .647059rem;color:var(--text-dim)">Your period dates, tension events, and settings will be replaced with the contents of this backup.</span>',
       () => {
         if (generation !== dataGeneration || eraseInProgress) return;
         return persistData(data, () => {
@@ -1805,7 +1829,7 @@ function renderOnboarding() {
         <div class="onboard-label">cycle length (if known)</div>
         <div class="onboard-row">
           <input type="number" class="log-input settings-input" id="onboard-cycle" aria-label="Cycle length in days (optional)" placeholder="28" min="18" max="45" style="width:80px">
-          <span style="font-size:12px;color:var(--text-muted)">days — leave blank for default (28)</span>
+          <span style="font-size: .705882rem;color:var(--text-muted)">days — leave blank for default (28)</span>
         </div>
       </div>
       <div class="onboard-field">
@@ -1815,8 +1839,8 @@ function renderOnboarding() {
         </div>
         <div class="onboard-note">Email sent to Formspree</div>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);line-height:1.8;margin-bottom:16px;margin-top:8px">
-        By continuing, you agree that Marcy provides <strong style="color:var(--text-dim);font-weight:500">estimates only</strong>, based on general medical conventions. This is not a medical device. It should not be relied upon for contraception, fertility planning, or any medical decisions. See full <button class="terms-toggle" style="display:inline;font-size:10px;padding:0;text-decoration:underline" onclick="document.getElementById('onboard-terms').style.display=document.getElementById('onboard-terms').style.display==='none'?'block':'none'">disclaimer</button>.
+      <div style="font-size: .588235rem;color:var(--text-muted);line-height:1.8;margin-bottom:16px;margin-top:8px">
+        By continuing, you agree that Marcy provides <strong style="color:var(--text-dim);font-weight:500">estimates only</strong>, based on general medical conventions. This is not a medical device. It should not be relied upon for contraception, fertility planning, or any medical decisions. See full <button class="terms-toggle" style="display:inline;font-size: .588235rem;padding:0;text-decoration:underline" onclick="document.getElementById('onboard-terms').style.display=document.getElementById('onboard-terms').style.display==='none'?'block':'none'">disclaimer</button>.
         <div id="onboard-terms" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
           All predictions are estimates based on general medical conventions regarding average menstrual cycle patterns, including a standard 14-day luteal phase assumption. Every person's cycle is different, and actual timing may vary significantly from these estimates.
           <br><br>
@@ -2106,7 +2130,7 @@ function renderManage(status, data, history) {
   if (history.entries.length > 0) {
     html += `<div class="history-section">
       <button class="section-title" style="background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="togglePeriodHistory()">
-        <span class="today-arrow" style="font-size:8px;color:var(--text-muted);display:inline-block;transform:rotate(${periodHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
+        <span class="today-arrow" style="font-size: .470588rem;color:var(--text-muted);display:inline-block;transform:rotate(${periodHistoryOpen ? '90deg' : '0deg'});transition:transform 0.2s">&#9654;</span>
         period history — ${history.entries.length}
       </button>`;
     if (periodHistoryOpen) {
@@ -2151,7 +2175,7 @@ function renderManage(status, data, history) {
              <button class="settings-save" id="settings-save-email" style="margin-left:8px" ${emailSubmissionPending ? 'disabled' : ''}>${emailSubmissionPending ? 'sending…' : 'sign up'}</button>`
         }
       </div>
-      ${!data.email ? '<div style="font-size:10px;color:var(--text-muted);padding-top:4px">Email sent to Formspree</div>' : ''}
+      ${!data.email ? '<div style="font-size: .588235rem;color:var(--text-muted);padding-top:4px">Email sent to Formspree</div>' : ''}
     </div>
   `;
 
@@ -2169,7 +2193,7 @@ function renderManage(status, data, history) {
         </div>
       </div>
       <div class="settings-row" style="border-bottom:none">
-        <span class="settings-label" style="font-size:11px;color:var(--text-muted)">
+        <span class="settings-label" style="font-size: .647059rem;color:var(--text-muted)">
           ${data.settings.manual_cycle_length ? 'manual override active — clear to use auto-calculation' : 'blank = auto-calculated from logged periods'}
         </span>
         ${data.settings.manual_cycle_length ? '<button class="settings-save" id="settings-clear-cycle">clear</button>' : ''}
@@ -2189,7 +2213,7 @@ function renderManage(status, data, history) {
   html += `
     <div class="settings-section">
       <div class="section-title">data</div>
-      <div style="font-size:11px;color:var(--text-muted);line-height:1.8;margin-bottom:12px">
+      <div style="font-size: .647059rem;color:var(--text-muted);line-height:1.8;margin-bottom:12px">
         <strong style="color:var(--text-dim);font-weight:500">your data lives on this device only.</strong> Marcy doesn't use accounts or servers — everything is stored locally on your device. Your data will persist through normal use, but it <strong style="color:var(--text-dim);font-weight:500">will be deleted</strong> if you delete the app or reset your device.
         <br><br>
         Export a backup to save a copy of your data as a file. If your data is ever lost, use import to restore it.
@@ -2383,7 +2407,7 @@ function bindSettings() {
       };
       if (diffPct > 0.2) {
         showConfirm(
-          `You entered ${n}d, but her tracked average is ${auto}d — a ${Math.round(diffPct * 100)}% difference.<br><span style="font-size:11px;color:var(--text-dim)">This will override predictions until cleared.</span>`,
+          `You entered ${n}d, but her tracked average is ${auto}d — a ${Math.round(diffPct * 100)}% difference.<br><span style="font-size: .647059rem;color:var(--text-dim)">This will override predictions until cleared.</span>`,
           apply,
           'use anyway',
           'confirm-ok'
@@ -2435,7 +2459,7 @@ function bindSettings() {
 }
 
 function confirmDel(dateStr) {
-  showConfirm(`Remove period ${escapeHTML(dateStr)}?<br><span style="font-size:11px;color:var(--text-dim)">This will affect cycle calculations.</span>`, () => {
+  showConfirm(`Remove period ${escapeHTML(dateStr)}?<br><span style="font-size: .647059rem;color:var(--text-dim)">This will affect cycle calculations.</span>`, () => {
     const data = loadData();
     if (!data.periods.includes(dateStr)) return;
     const previousData = structuredClone(data);
@@ -2462,7 +2486,7 @@ function confirmDelTension(dateStr) {
 }
 
 function confirmEraseData() {
-  showConfirm('Erase all Marcy data on this device?<br><span style="font-size:11px;color:var(--text-dim)">History, settings, and recovery copies will be removed. This cannot be undone. Downloaded backups and email signup are unaffected.</span><br><button class="backup-btn" id="erase-export" style="margin-top:16px">export backup first</button>', eraseMarcyData, 'erase data');
+  showConfirm('Erase all Marcy data on this device?<br><span style="font-size: .647059rem;color:var(--text-dim)">History, settings, and recovery copies will be removed. This cannot be undone. Downloaded backups and email signup are unaffected.</span><br><button class="backup-btn" id="erase-export" style="margin-top:16px">export backup first</button>', eraseMarcyData, 'erase data');
   document.getElementById('erase-export').addEventListener('click', exportData);
 }
 
