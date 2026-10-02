@@ -101,11 +101,18 @@ test('erase failure is not reported as success and preserves primary until recov
 
 test('native import confirms replacement and export shares the committed native history as a file',async t=>{
  const {w,state}=await boot(t,{native:{[KEY]:JSON.stringify(data()),[MARKER]:'1'}});
- w.FileReader=class{readAsText(){this.onload({target:{result:JSON.stringify({periods:['2026-09-01'],tensions:[]})}});}};
+ w.switchView('manage');assert.equal(w.document.querySelector('#tension-mode').value,'current');
+ const replacement={periods:['2026-08-01','2026-08-29'],tensions:['2026-09-01']};
+ w.FileReader=class{readAsText(){this.onload({target:{result:JSON.stringify(replacement)}});}};
  w.importData({size:100});assert.match(w.document.querySelector('#confirm-root').textContent,/replace your current history/);
- assert.equal(w.loadData().periods[0],'2026-08-01');w.document.querySelector('#confirm-yes').click();await flush();assert.equal(w.loadData().periods[0],'2026-09-01');
+ assert.equal(w.loadData().periods.length,1);w.document.querySelector('#confirm-yes').click();await flush();assert.deepEqual(Array.from(w.loadData().periods),replacement.periods);
+ const imported=w.loadData();assert.deepEqual(Array.from(imported.tensions),['2026-09-01']);
+ assert.match(w.document.querySelector('#toast').textContent,/restored 2 periods and 1 tension event/);
+ assert.equal(w.document.querySelector('#tension-mode').value,'current');
+ assert.equal(w.document.querySelector('[data-tension-day="4"] small').textContent,'●');
  assert.equal(await w.exportData(),true);assert.equal(state.blobs.length,0);assert.equal(state.files.length,1);assert.equal(state.files[0].directory,'CACHE');assert.equal(state.files[0].encoding,'utf8');
- assert.equal(JSON.parse(state.files[0].data).periods[0],'2026-09-01');assert.deepEqual(Array.from(state.shares[0].files),['file:///cache/marcy-backup-2026-09-28.json']);assert.equal(w.localStorage.getItem(KEY),null);
+ const exported=JSON.parse(state.files[0].data);assert.deepEqual(Array.from(exported.periods),replacement.periods);assert.deepEqual(Array.from(exported.tensions),replacement.tensions);
+ assert.deepEqual(Array.from(state.shares[0].files),['file:///cache/marcy-backup-2026-09-28.json']);assert.equal(w.localStorage.getItem(KEY),null);
 });
 
 test('native deletion and Undo persist in Preferences',async t=>{

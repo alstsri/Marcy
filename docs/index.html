@@ -1173,7 +1173,12 @@ function importData(file) {
       () => {
         if (generation !== dataGeneration || eraseInProgress) return;
         return persistData(data, () => {
-          toast(`restored ${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`);
+          tensionSelectedDay = null;
+          tensionDetailsOpen = false;
+          tensionMode = null;
+          const periodLabel = `${data.periods.length} period${data.periods.length !== 1 ? 's' : ''}`;
+          const tensionLabel = `${data.tensions.length} tension event${data.tensions.length !== 1 ? 's' : ''}`;
+          toast(`restored ${periodLabel} and ${tensionLabel}`);
           render();
         }, { restore: true });
       },
@@ -1348,8 +1353,11 @@ function getTensionAnalysis(data) {
     const offset = daysBetween(parseDate(periods[0]), parseDate(date));
     return { date, day: ((offset % averageLength) + averageLength) % averageLength + 1 };
   }) : [];
+  const completedEventCount = tensions.filter(date => cycles.some(cycle => date >= cycle.start && date < cycle.end)).length;
+  const currentEventCount = start ? tensions.filter(date => date >= start).length : 0;
   return {
     cycles, current, eventDates, estimated,
+    completedEventCount, currentEventCount,
     maxDay: Math.max(28, averageLength, current ? current.length : 0, ...cycles.map(c => c.length)),
     unmapped: [...new Set(data.tensions || [])].filter(d => !valid(d) || !start),
   };
@@ -1380,7 +1388,10 @@ function renderTensionMap(analysis) {
   const first = 1, last = analysis.maxDay;
   if (tensionSelectedDay !== null && (tensionSelectedDay < first || tensionSelectedDay > last)) tensionSelectedDay = null;
   const selected = tensionSelectedDay ?? first;
-  if (tensionMode === null) tensionMode = analysis.cycles.length ? 'completed' : 'current';
+  if (tensionMode === null) {
+    tensionMode = !analysis.cycles.length || (!analysis.completedEventCount && analysis.currentEventCount)
+      ? 'current' : 'completed';
+  }
   const current = tensionMode === 'current';
   let html = `<section class="tension-map" aria-label="Recorded tension by cycle day">
     <div class="timeline-title">Recorded tension by cycle day</div>
